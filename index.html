@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Zarvis AI</title>
+</head>
+
+<body>
+
+<div class="app">
+
+    <div class="sidebar">
+
+        <button class="new-chat" onclick="newChat()">
+            ＋ New Chat
+        </button>
+
+        <div class="history">
+            <p>Python Learning</p>
+            <p>My AI Project</p>
+            <p>Machine Learning</p>
+        </div>
+
+    </div>
+
+    <div class="chat">
+
+        <div class="topbar">
+            Zarvis
+        </div>
+
+        <div class="messages" id="messages">
+
+            <div class="message ai">
+
+                <div class="avatar">
+                    🤖
+                </div>
+
+                <div class="text">
+                    Hello 👋<br>
+                    Main tumhara AI assistant hoon.
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="input-area">
+
+            <div class="input-box">
+
+                <input
+                    type="text"
+                    id="input"
+                    placeholder="Message Zarvis..."
+                    onkeydown="handleEnter(event)"
+                >
+
+                <button onclick="sendMessage()">
+                    ➤
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
