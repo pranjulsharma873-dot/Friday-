@@ -1,511 +1,76 @@
 /* ================================
-   FRIDAY AI - STYLE.CSS
+   CHAT MESSAGES
 ================================ */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-}
-
-body {
-    background: #000;
-    color: #fff;
-    height: 100vh;
-    overflow: hidden;
-}
-
-
-/* ================================
-   HEADER
-================================ */
-
-.header {
-    height: 65px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 0 18px;
-
-    background: #000;
-    border-bottom: 1px solid #1c1c1c;
-}
-
-.menu-btn,
-.profile-btn {
-    background: transparent;
-    border: none;
-    color: #fff;
-
-    font-size: 27px;
-
-    cursor: pointer;
-}
-
-.menu-btn:active,
-.profile-btn:active {
-    transform: scale(0.9);
-}
-
-.title {
-    font-size: 21px;
-    font-weight: bold;
-    letter-spacing: 2px;
-}
-
-
-/* ================================
-   MAIN SCREEN
-================================ */
-
-.main {
-    height: calc(100vh - 65px);
-
-    display: flex;
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 20px;
-}
-
-
-/* ================================
-   MICROPHONE
-================================ */
-
-.mic-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    margin-bottom: 20px;
-}
-
-.mic-btn {
-    width: 100px;
-    height: 100px;
-
-    border-radius: 50%;
-
-    background: #0d0d0d;
-
-    border: 1px solid #333;
-
-    color: #fff;
-
-    font-size: 40px;
-
-    cursor: pointer;
-
-    transition: 0.2s;
-}
-
-.mic-btn:hover {
-    background: #151515;
-}
-
-.mic-btn:active {
-    transform: scale(0.92);
-}
-
-
-/* ================================
-   MIC STATUS
-================================ */
-
-.mic-status {
-    margin-bottom: 22px;
-
-    color: #777;
-
-    font-size: 14px;
-
-    text-align: center;
-}
-
-
-/* ================================
-   CHAT INPUT
-================================ */
-
-.chat-box {
+.chat-messages {
     width: 100%;
     max-width: 500px;
 
-    display: flex;
-    align-items: center;
+    max-height: 220px;
+
+    overflow-y: auto;
+
+    margin-bottom: 15px;
+
+    padding: 5px;
+}
+
+
+/* USER MESSAGE */
+
+.user-message {
+    width: fit-content;
+    max-width: 80%;
+
+    margin-left: auto;
+    margin-bottom: 10px;
+
+    padding: 10px 14px;
+
+    background: #222;
+
+    color: white;
+
+    border-radius: 16px 16px 4px 16px;
+
+    font-size: 14px;
+
+    word-wrap: break-word;
+}
+
+
+/* FRIDAY MESSAGE */
+
+.friday-message {
+    width: fit-content;
+    max-width: 80%;
+
+    margin-right: auto;
+    margin-bottom: 10px;
+
+    padding: 10px 14px;
 
     background: #111;
 
     border: 1px solid #292929;
 
-    border-radius: 28px;
-
-    padding: 5px 7px 5px 18px;
-}
-
-.chat-input {
-    flex: 1;
-
-    background: transparent;
-
-    border: none;
-    outline: none;
-
-    color: #fff;
-
-    font-size: 15px;
-}
-
-.chat-input::placeholder {
-    color: #777;
-}
-
-.send-btn {
-    width: 42px;
-    height: 42px;
-
-    border-radius: 50%;
-
-    border: none;
-
-    background: #fff;
-
-    color: #000;
-
-    cursor: pointer;
-
-    font-size: 18px;
-
-    transition: 0.2s;
-}
-
-.send-btn:active {
-    transform: scale(0.9);
-}
-
-
-/* ================================
-   BOTTOM MENU
-================================ */
-
-.bottom-menu {
-    margin-top: 30px;
-
-    width: 100%;
-    max-width: 500px;
-
-    display: grid;
-
-    grid-template-columns: repeat(2, 1fr);
-
-    gap: 10px;
-}
-
-.bottom-btn {
-    background: #0d0d0d;
-
-    border: 1px solid #222;
-
     color: #ddd;
 
-    padding: 14px 10px;
-
-    border-radius: 12px;
-
-    cursor: pointer;
+    border-radius: 16px 16px 16px 4px;
 
     font-size: 14px;
 
-    transition: 0.2s;
-}
-
-.bottom-btn:hover {
-    background: #151515;
-    color: #fff;
-}
-
-.bottom-btn:active {
-    transform: scale(0.97);
+    word-wrap: break-word;
 }
 
 
-/* ================================
-   SIDE MENU
-================================ */
+/* SCROLLBAR */
 
-.side-menu {
-    position: fixed;
-
-    top: 0;
-    left: -290px;
-
-    width: 290px;
-    height: 100vh;
-
-    background: #080808;
-
-    border-right: 1px solid #222;
-
-    z-index: 100;
-
-    padding: 20px;
-
-    transition: left 0.3s ease;
+.chat-messages::-webkit-scrollbar {
+    width: 4px;
 }
 
-.side-menu.active {
-    left: 0;
-}
-
-
-/* ================================
-   SIDE MENU HEADER
-================================ */
-
-.menu-header {
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-
-    margin-bottom: 30px;
-}
-
-.menu-title {
-    font-size: 20px;
-
-    font-weight: bold;
-
-    letter-spacing: 1px;
-}
-
-.close-btn {
-    background: transparent;
-
-    border: none;
-
-    color: #fff;
-
-    font-size: 27px;
-
-    cursor: pointer;
-}
-
-
-/* ================================
-   MENU ITEMS
-================================ */
-
-.menu-item {
-    width: 100%;
-
-    background: transparent;
-
-    border: none;
-
-    color: #ddd;
-
-    text-align: left;
-
-    padding: 15px 5px;
-
-    font-size: 16px;
-
-    cursor: pointer;
-
-    border-bottom: 1px solid #151515;
-
-    transition: 0.2s;
-}
-
-.menu-item:hover {
-    background: #111;
-
-    color: #fff;
-}
-
-.menu-item:active {
-    transform: translateX(3px);
-}
-
-
-/* ================================
-   OVERLAY
-================================ */
-
-.overlay {
-    position: fixed;
-
-    inset: 0;
-
-    background: rgba(0, 0, 0, 0.65);
-
-    display: none;
-
-    z-index: 90;
-}
-
-.overlay.active {
-    display: block;
-}
-
-
-/* ================================
-   MODAL
-================================ */
-
-.modal {
-    position: fixed;
-
-    width: 90%;
-    max-width: 400px;
-
-    background: #0b0b0b;
-
-    border: 1px solid #252525;
-
-    border-radius: 15px;
-
-    padding: 22px;
-
-    left: 50%;
-    top: 50%;
-
-    transform: translate(-50%, -50%) scale(0.9);
-
-    opacity: 0;
-
-    pointer-events: none;
-
-    transition: 0.2s;
-
-    z-index: 200;
-}
-
-.modal.active {
-    opacity: 1;
-
-    transform: translate(-50%, -50%) scale(1);
-
-    pointer-events: auto;
-}
-
-.modal h2 {
-    margin-bottom: 15px;
-
-    font-size: 21px;
-}
-
-.modal p {
-    color: #999;
-
-    margin-bottom: 20px;
-
-    line-height: 1.5;
-}
-
-.modal-close {
-    width: 100%;
-
-    padding: 12px;
-
-    border: none;
-
-    border-radius: 8px;
-
-    background: #fff;
-
-    color: #000;
-
-    cursor: pointer;
-
-    font-weight: bold;
-}
-
-
-/* ================================
-   MOBILE
-================================ */
-
-@media (max-width: 400px) {
-
-    .title {
-        font-size: 18px;
-    }
-
-    .mic-btn {
-        width: 85px;
-        height: 85px;
-
-        font-size: 34px;
-    }
-
-    .bottom-btn {
-        font-size: 13px;
-
-        padding: 13px 8px;
-    }
-
-    .side-menu {
-        width: 280px;
-    }
-}
-
-
-/* ================================
-   SMALL HEIGHT SCREEN
-================================ */
-
-@media (max-height: 600px) {
-
-    .mic-btn {
-        width: 75px;
-        height: 75px;
-
-        font-size: 30px;
-    }
-
-    .mic-status {
-        margin-bottom: 12px;
-    }
-
-    .bottom-menu {
-        margin-top: 20px;
-    }
-}
-
-HTML ke "<head>" mein inline "<style>...</style>" ki jagah ye laga dena:
-
-<link rel="stylesheet" href="style.css">
-
-Bas ab structure "index.html" + "style.css" separate ho gaya. 🔥
-.chat-messages {
-    width: 100%;
-    max-width: 500px;
-    max-height: 300px;
-    overflow-y: auto;
-    margin-bottom: 15px;
-}
-
-.user-message {
-    background: #222;
-    padding: 10px 14px;
-    border-radius: 15px;
-    margin: 8px 0;
-    margin-left: 40px;
-    text-align: right;
-}
-
-.friday-message {
-    background: #111;
-    border: 1px solid #222;
-    padding: 10px 14px;
-    border-radius: 15px;
-    margin: 8px 40px 8px 0;
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 10px;
 }
