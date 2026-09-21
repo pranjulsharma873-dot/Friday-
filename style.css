@@ -177,17 +177,34 @@ body {
     background: #555;
 }
 .mic-button {
-    width: 55px !important;
-    height: 55px !important;
+    width: 55px;
+    height: 55px;
     min-width: 55px;
-    display: flex !important;
+
+    display: flex;
     align-items: center;
     justify-content: center;
-    border: none;
-    border-radius: 10px;
-    background: #333333;
-    color: white;
-    font-size: 24px;
+
+    border: 3px solid #00e5c3;
+    border-radius: 50%;
+
+    background: transparent;
+    color: #00e5c3;
+
+    font-size: 25px;
     cursor: pointer;
+
     flex-shrink: 0;
+
+    transition: 0.2s ease;
+}
+
+.mic-button:hover {
+    background: rgba(0, 229, 195, 0.12);
+    transform: scale(1.05);
+}
+
+.mic-button:active {
+    background: rgba(0, 229, 195, 0.22);
+    transform: scale(0.95);
 }
