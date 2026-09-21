@@ -3,13 +3,22 @@ function sendMessage() {
     const input = document.getElementById("chatInput");
     const message = input.value.trim();
 
-    if (message === "") {
-        return;
-    }
+    if (message === "") return;
+
+    const chat = document.getElementById("chatMessages");
+
+    // User message
+    const userMessage = document.createElement("div");
+    userMessage.className = "user-message";
+    userMessage.innerText = message;
+
+    chat.appendChild(userMessage);
 
     input.value = "";
 
+    // FRIDAY reply
     let reply = "";
+
     const msg = message.toLowerCase();
 
     if (msg === "hi" || msg === "hello") {
@@ -21,14 +30,16 @@ function sendMessage() {
     else if (msg.includes("how are you")) {
         reply = "I am working perfectly.";
     }
-    else if (msg.includes("time")) {
-        reply = "The current time is " +
-                new Date().toLocaleTimeString();
-    }
     else {
         reply = "I received your message: " + message;
     }
 
-    // Abhi popup nahi hoga
-    console.log("FRIDAY:", reply);
+    // FRIDAY message
+    const fridayMessage = document.createElement("div");
+    fridayMessage.className = "friday-message";
+    fridayMessage.innerText = reply;
+
+    chat.appendChild(fridayMessage);
+
+    chat.scrollTop = chat.scrollHeight;
 }
