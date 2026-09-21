@@ -163,3 +163,16 @@ body {
     }
 
 }
+.mic-button {
+    width: 55px;
+    border: none;
+    border-radius: 10px;
+    background: #333;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.mic-button:active {
+    background: #555;
+}
