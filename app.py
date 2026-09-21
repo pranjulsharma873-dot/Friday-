@@ -1,219 +1,78 @@
-from flask import Flask, request, jsonify, send_file
-import json
-import re
-from datetime import datetime
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from openai import OpenAI
+import os
 
 app = Flask(__name__)
+CORS(app)
 
-MEMORY_FILE = "memory.json"
+# API key environment variable se aayegi
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY")
+)
 
+# Zarvis ki personality
+SYSTEM_PROMPT = """
+You are Zarvis, a helpful personal AI assistant.
 
-def load_memory():
-
-    try:
-
-        with open(
-            MEMORY_FILE,
-            "r",
-            encoding="utf-8"
-        ) as f:
-
-            return json.load(f)
-
-    except (
-        FileNotFoundError,
-        json.JSONDecodeError
-    ):
-
-        return {}
-
-
-answers = load_memory()
-
-
-def clean_message(message):
-
-    message = message.lower().strip()
-
-    message = re.sub(
-        r"[^\w\s]",
-        "",
-        message
-    )
-
-    message = " ".join(
-        message.split()
-    )
-
-    return message
-
-
-def save_memory():
-
-    with open(
-        MEMORY_FILE,
-        "w",
-        encoding="utf-8"
-    ) as f:
-
-        json.dump(
-            answers,
-            f,
-            ensure_ascii=False,
-            indent=4
-        )
-
-
-def ai_reply(message):
-
-    message = clean_message(message)
-
-    if message == "":
-        return "Kuch likho bhai 😄"
-
-    if message in answers:
-
-        saved = answers[message]
-
-        if isinstance(saved, dict):
-            return saved["answer"]
-
-        return saved
-
-    if message in [
-        "hello",
-        "hlo",
-        "hi"
-    ]:
-
-        return (
-            "Hello bhai! 👋 "
-            "Main Zarvis hoon."
-        )
-
-    if message == "tumhara naam kya hai":
-
-        return (
-            "Mera naam Zarvis hai. 🤖"
-        )
-
-    if message == "who are you":
-
-        return (
-            "Main tumhara AI "
-            "assistant Zarvis hoon."
-        )
-
-    return None
-
+Rules:
+- Understand Hindi, English and Hinglish.
+- Reply naturally and clearly.
+- Be friendly and conversational.
+- Keep answers reasonably concise unless the user asks for detail.
+- Remember the conversation provided in the current request.
+"""
 
 @app.route("/")
 def home():
-
-    return send_file(
-        "index.html"
-    )
+    return "Zarvis AI Backend is running."
 
 
-@app.route(
-    "/chat",
-    methods=["POST"]
-)
+@app.route("/chat", methods=["POST"])
 def chat():
 
-    data = request.get_json()
+    try:
 
-    message = data.get(
-        "message",
-        ""
-    ).strip()
+        data = request.get_json()
 
-    answer = ai_reply(message)
+        user_message = data.get("message", "").strip()
 
-    if answer is None:
-
-        return jsonify({
-
-            "known": False,
-
-            "reply":
-            "Mujhe iska answer abhi nahi pata 😕"
-
-        })
-
-    return jsonify({
-
-        "known": True,
-
-        "reply": answer
-
-    })
+        if not user_message:
+            return jsonify({
+                "error": "Message is empty"
+            }), 400
 
 
-@app.route(
-    "/teach",
-    methods=["POST"]
-)
-def teach():
+        response = client.responses.create(
 
-    global answers
+            model="gpt-5.6-luna",
 
-    data = request.get_json()
+            instructions=SYSTEM_PROMPT,
 
-    question = data.get(
-        "question",
-        ""
-    ).strip()
+            input=user_message
 
-    new_answer = data.get(
-        "answer",
-        ""
-    ).strip()
-
-    if (
-        question == "" or
-        new_answer == ""
-    ):
-
-        return jsonify({
-
-            "success": False,
-
-            "reply":
-            "Question aur answer dono chahiye."
-
-        })
-
-    question = clean_message(
-        question
-    )
-
-    answers[question] = {
-
-        "answer": new_answer,
-
-        "learned_at":
-        datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
         )
 
-    }
 
-    save_memory()
-
-    return jsonify({
-
-        "success": True,
-
-        "reply":
-        "Thanks bhai! 🧠 "
-        "Maine ye baat yaad kar li."
-
-    })
+        answer = response.output_text
 
 
-app.run(
-    host="127.0.0.1",
-    port=5000,
-    debug=True
-)
+        return jsonify({
+            "reply": answer
+        })
+
+
+    except Exception as e:
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+
+if __name__ == "__main__":
+
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False
+            )
