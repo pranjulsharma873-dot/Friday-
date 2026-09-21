@@ -1,165 +1,644 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <title>FRIDAY AI</title>
 
-    <meta
-        name="description"
-        content="Friday AI Assistant"
-    >
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
 
-    <title>Friday</title>
+        body {
+            background: #000;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="style.css">
+        /* ================= HEADER ================= */
 
+        .header {
+            height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            border-bottom: 1px solid #1c1c1c;
+        }
+
+        .menu-btn,
+        .profile-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 27px;
+            cursor: pointer;
+        }
+
+        .title {
+            font-size: 21px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        /* ================= MAIN ================= */
+
+        .main {
+            height: calc(100vh - 65px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .mic-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .mic-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #111;
+            border: 1px solid #333;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .mic-btn:active {
+            transform: scale(0.94);
+            background: #1b1b1b;
+        }
+
+        .mic-status {
+            margin-bottom: 20px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        /* ================= CHAT INPUT ================= */
+
+        .chat-box {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            background: #111;
+            border: 1px solid #292929;
+            border-radius: 28px;
+            padding: 5px 7px 5px 18px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 15px;
+        }
+
+        .chat-input::placeholder {
+            color: #777;
+        }
+
+        .send-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: none;
+            background: white;
+            color: black;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        /* ================= BOTTOM BUTTONS ================= */
+
+        .bottom-menu {
+            margin-top: 35px;
+            width: 100%;
+            max-width: 500px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .bottom-btn {
+            background: #0d0d0d;
+            border: 1px solid #222;
+            color: #ddd;
+            padding: 14px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .bottom-btn:hover {
+            background: #151515;
+        }
+
+        /* ================= SIDE MENU ================= */
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -290px;
+            width: 290px;
+            height: 100vh;
+            background: #080808;
+            border-right: 1px solid #222;
+            z-index: 100;
+            transition: 0.3s;
+            padding: 20px;
+        }
+
+        .side-menu.active {
+            left: 0;
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .menu-title {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 25px;
+            cursor: pointer;
+        }
+
+        .menu-item {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #ddd;
+            text-align: left;
+            padding: 15px 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #151515;
+        }
+
+        .menu-item:hover {
+            color: white;
+            background: #111;
+        }
+
+        /* ================= OVERLAY ================= */
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            display: none;
+            z-index: 90;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* ================= MODAL ================= */
+
+        .modal {
+            position: fixed;
+            width: 90%;
+            max-width: 400px;
+            background: #0b0b0b;
+            border: 1px solid #252525;
+            border-radius: 15px;
+            padding: 22px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s;
+            z-index: 200;
+        }
+
+        .modal.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+
+        .modal h2 {
+            margin-bottom: 15px;
+        }
+
+        .modal p {
+            color: #999;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .modal-close {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: black;
+            cursor: pointer;
+        }
+
+        /* ================= MOBILE ================= */
+
+        @media (max-width: 400px) {
+
+            .title {
+                font-size: 18px;
+            }
+
+            .mic-btn {
+                width: 85px;
+                height: 85px;
+                font-size: 34px;
+            }
+
+            .bottom-btn {
+                font-size: 13px;
+            }
+        }
+    </style>
 </head>
-
 
 <body>
 
-    <div class="app">
+    <!-- ================= HEADER ================= -->
+
+    <header class="header">
+
+        <button class="menu-btn" onclick="openMenu()">
+            ☰
+        </button>
+
+        <div class="title">
+            FRIDAY AI
+        </div>
+
+        <button class="profile-btn" onclick="openModal('profile')">
+            👤
+        </button>
+
+    </header>
 
 
-        <!-- ================= SIDEBAR ================= -->
+    <!-- ================= MAIN ================= -->
 
-        <aside class="sidebar">
+    <main class="main">
 
-            <button
-                class="new-chat"
-                onclick="newChat()"
-            >
-                ＋ New Chat
+        <div class="mic-container">
+
+            <button class="mic-btn" id="micButton" onclick="startMic()">
+                🎙️
             </button>
 
+        </div>
 
-            <div class="history">
-
-                <p>Python Learning</p>
-
-                <p>My AI Project</p>
-
-                <p>Machine Learning</p>
-
-            </div>
-
-        </aside>
+        <div class="mic-status" id="micStatus">
+            Tap microphone to talk
+        </div>
 
 
-        <!-- ================= MAIN CHAT ================= -->
+        <!-- CHAT -->
 
-        <main class="chat">
+        <div class="chat-box">
 
-
-            <!-- TOP BAR -->
-
-            <header class="topbar">
-
-                <div class="logo">
-
-                    🤖
-
-                    <span>
-                        Zarvis
-                    </span>
-
-                </div>
-
-            </header>
-
-
-            <!-- ================= MESSAGES ================= -->
-
-            <section
-                class="messages"
-                id="messages"
+            <input
+                type="text"
+                class="chat-input"
+                id="chatInput"
+                placeholder="Ask FRIDAY..."
+                onkeydown="handleEnter(event)"
             >
 
+            <button class="send-btn" onclick="sendMessage()">
+                ➤
+            </button>
 
-                <!-- AI WELCOME MESSAGE -->
-
-                <div class="message ai">
-
-                    <div class="avatar">
-                        🤖
-                    </div>
-
-                    <div class="text">
-
-                        <div>
-                            Hello 👋
-                        </div>
-
-                        <div>
-                            Main tumhara AI assistant hoon.
-                        </div>
-
-                    </div>
-
-                </div>
+        </div>
 
 
-            </section>
+        <!-- BOTTOM MENU -->
+
+        <div class="bottom-menu">
+
+            <button class="bottom-btn" onclick="openModal('chat')">
+                💬 Chat
+            </button>
+
+            <button class="bottom-btn" onclick="openModal('plugins')">
+                🧩 Plugins
+            </button>
+
+            <button class="bottom-btn" onclick="openModal('history')">
+                🕘 Chat History
+            </button>
+
+            <button class="bottom-btn" onclick="openModal('settings')">
+                ⚙️ Settings
+            </button>
+
+        </div>
+
+    </main>
 
 
-            <!-- ================= INPUT AREA ================= -->
+    <!-- ================= SIDE MENU ================= -->
 
-            <footer class="input-area">
+    <div class="overlay" id="overlay" onclick="closeMenu()"></div>
 
+    <aside class="side-menu" id="sideMenu">
 
-                <div class="input-box">
+        <div class="menu-header">
 
-    <input
-        type="text"
-        id="input"
-        placeholder="Message Friday..."
-        autocomplete="off"
-        onkeydown="handleEnter(event)"
-    >
+            <div class="menu-title">
+                FRIDAY AI
+            </div>
 
-    <button
-    class="mic-button"
-    id="micButton"
-    onclick="startListening()"
-    aria-label="Voice input">
-    🎙
-    </button>
+            <button class="close-btn" onclick="closeMenu()">
+                ×
+            </button>
 
-    <button
-        class="send-button"
-        onclick="sendMessage()"
-        aria-label="Send message">
-        ➤
-    </button>
-
-                </div>
-
-                </div>
+        </div>
 
 
-                <div class="footer-text">
+        <button class="menu-item" onclick="openModal('profile')">
+            👤 Profile
+        </button>
 
-            
+        <button class="menu-item" onclick="openModal('chat')">
+            💬 New Chat
+        </button>
 
-                </div>
+        <button class="menu-item" onclick="openModal('history')">
+            🕘 Chat History
+        </button>
+
+        <button class="menu-item" onclick="openModal('plugins')">
+            🧩 Plugins
+        </button>
+
+        <button class="menu-item" onclick="openModal('settings')">
+            ⚙️ Settings
+        </button>
+
+    </aside>
 
 
-            </footer>
+    <!-- ================= MODAL ================= -->
 
+    <div class="modal" id="modal">
+
+        <h2 id="modalTitle">
+            FRIDAY AI
+        </h2>
+
+        <p id="modalText">
+            Welcome to FRIDAY AI.
+        </p>
+
+        <button class="modal-close" onclick="closeModal()">
+            Close
+        </button>
+
+    </div>
 
 
     <!-- ================= JAVASCRIPT ================= -->
 
-    <script src="script.js"></script>
+    <script>
 
+        /* SIDE MENU */
+
+        function openMenu() {
+
+            document
+                .getElementById("sideMenu")
+                .classList
+                .add("active");
+
+            document
+                .getElementById("overlay")
+                .classList
+                .add("active");
+        }
+
+
+        function closeMenu() {
+
+            document
+                .getElementById("sideMenu")
+                .classList
+                .remove("active");
+
+            document
+                .getElementById("overlay")
+                .classList
+                .remove("active");
+        }
+
+
+        /* MODAL */
+
+        function openModal(type) {
+
+            closeMenu();
+
+            const title =
+                document.getElementById("modalTitle");
+
+            const text =
+                document.getElementById("modalText");
+
+            if (type === "profile") {
+
+                title.innerText = "Profile";
+
+                text.innerText =
+                    "FRIDAY AI User Profile";
+
+            }
+
+            else if (type === "chat") {
+
+                title.innerText = "Chat";
+
+                text.innerText =
+                    "Your new FRIDAY AI chat starts here.";
+
+            }
+
+            else if (type === "plugins") {
+
+                title.innerText = "Plugins";
+
+                text.innerText =
+                    "Plugins will appear here.";
+
+            }
+
+            else if (type === "history") {
+
+                title.innerText = "Chat History";
+
+                text.innerText =
+                    "Your previous conversations will appear here.";
+
+            }
+
+            else if (type === "settings") {
+
+                title.innerText = "Settings";
+
+                text.innerText =
+                    "FRIDAY AI settings will appear here.";
+
+            }
+
+            document
+                .getElementById("modal")
+                .classList
+                .add("active");
+        }
+
+
+        function closeModal() {
+
+            document
+                .getElementById("modal")
+                .classList
+                .remove("active");
+        }
+
+
+        /* MICROPHONE */
+
+        function startMic() {
+
+            const status =
+                document.getElementById("micStatus");
+
+            const mic =
+                document.getElementById("micButton");
+
+            if (
+                !("webkitSpeechRecognition" in window) &&
+                !("SpeechRecognition" in window)
+            ) {
+
+                status.innerText =
+                    "Voice recognition is not supported";
+
+                return;
+            }
+
+            const SpeechRecognition =
+                window.SpeechRecognition ||
+                window.webkitSpeechRecognition;
+
+            const recognition =
+                new SpeechRecognition();
+
+            recognition.lang = "en-IN";
+
+            recognition.interimResults = false;
+
+            status.innerText =
+                "Listening...";
+
+            mic.innerText = "🔴";
+
+            recognition.start();
+
+
+            recognition.onresult = function(event) {
+
+                const result =
+                    event.results[0][0].transcript;
+
+                document
+                    .getElementById("chatInput")
+                    .value = result;
+
+                status.innerText =
+                    "Voice received";
+
+                mic.innerText = "🎙️";
+            };
+
+
+            recognition.onerror = function() {
+
+                status.innerText =
+                    "Couldn't hear you";
+
+                mic.innerText = "🎙️";
+            };
+
+
+            recognition.onend = function() {
+
+                mic.innerText = "🎙️";
+            };
+        }
+
+
+        /* CHAT */
+
+        function sendMessage() {
+
+            const input =
+                document.getElementById("chatInput");
+
+            const message =
+                input.value.trim();
+
+            if (message === "") {
+                return;
+            }
+
+            alert("You: " + message);
+
+            input.value = "";
+        }
+
+
+        function handleEnter(event) {
+
+            if (event.key === "Enter") {
+
+                sendMessage();
+
+            }
+        }
+
+    </script>
 
 </body>
-
-</html> 
+</html>
