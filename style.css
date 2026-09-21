@@ -16,7 +16,7 @@
 }
 
 
-/* USER MESSAGE */
+/* USER */
 
 .user-message {
     width: fit-content;
@@ -35,11 +35,11 @@
 
     font-size: 14px;
 
-    word-wrap: break-word;
+    word-break: break-word;
 }
 
 
-/* FRIDAY MESSAGE */
+/* FRIDAY */
 
 .friday-message {
     width: fit-content;
@@ -52,25 +52,13 @@
 
     background: #111;
 
-    border: 1px solid #292929;
-
     color: #ddd;
+
+    border: 1px solid #292929;
 
     border-radius: 16px 16px 16px 4px;
 
     font-size: 14px;
 
-    word-wrap: break-word;
-}
-
-
-/* SCROLLBAR */
-
-.chat-messages::-webkit-scrollbar {
-    width: 4px;
-}
-
-.chat-messages::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 10px;
+    word-break: break-word;
 }
