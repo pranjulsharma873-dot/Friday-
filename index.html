@@ -17,7 +17,6 @@
 
     <title>FRIDAY AI</title>
 
-    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 
 </head>
@@ -25,15 +24,14 @@
 
 <body>
 
-    <!-- =================================
-         HEADER
-    ================================== -->
+    <!-- HEADER -->
 
     <header class="header">
 
         <button
             class="menu-btn"
-            onclick="openMenu()"
+            id="menuButton"
+            type="button"
             aria-label="Open menu"
         >
             ☰
@@ -47,7 +45,8 @@
 
         <button
             class="profile-btn"
-            onclick="openModal('profile')"
+            id="profileButton"
+            type="button"
             aria-label="Profile"
         >
             👤
@@ -57,9 +56,7 @@
 
 
 
-    <!-- =================================
-         MAIN
-    ================================== -->
+    <!-- MAIN -->
 
     <main class="main">
 
@@ -71,7 +68,7 @@
             <button
                 class="mic-btn"
                 id="micButton"
-                onclick="startMic()"
+                type="button"
                 aria-label="Microphone"
             >
                 🎙️
@@ -79,8 +76,6 @@
 
         </div>
 
-
-        <!-- MIC STATUS -->
 
         <div
             class="mic-status"
@@ -91,9 +86,7 @@
 
 
 
-        <!-- =================================
-             CHAT MESSAGES
-        ================================== -->
+        <!-- CHAT MESSAGES -->
 
         <div
             id="chatMessages"
@@ -102,9 +95,7 @@
 
 
 
-        <!-- =================================
-             CHAT INPUT
-        ================================== -->
+        <!-- CHAT INPUT -->
 
         <div class="chat-box">
 
@@ -114,13 +105,12 @@
                 id="chatInput"
                 placeholder="Ask FRIDAY..."
                 autocomplete="off"
-                onkeydown="handleEnter(event)"
             >
-
 
             <button
                 class="send-btn"
-                onclick="sendMessage()"
+                id="sendButton"
+                type="button"
                 aria-label="Send message"
             >
                 ➤
@@ -130,16 +120,14 @@
 
 
 
-        <!-- =================================
-             BOTTOM MENU
-        ================================== -->
+        <!-- BOTTOM MENU -->
 
         <div class="bottom-menu">
 
-
             <button
                 class="bottom-btn"
-                onclick="openModal('chat')"
+                id="chatButton"
+                type="button"
             >
                 💬 Chat
             </button>
@@ -147,7 +135,8 @@
 
             <button
                 class="bottom-btn"
-                onclick="openModal('plugins')"
+                id="pluginsButton"
+                type="button"
             >
                 🧩 Plugins
             </button>
@@ -155,7 +144,8 @@
 
             <button
                 class="bottom-btn"
-                onclick="openModal('history')"
+                id="historyButton"
+                type="button"
             >
                 🕘 Chat History
             </button>
@@ -163,7 +153,8 @@
 
             <button
                 class="bottom-btn"
-                onclick="openModal('settings')"
+                id="settingsButton"
+                type="button"
             >
                 ⚙️ Settings
             </button>
@@ -174,39 +165,32 @@
 
 
 
-    <!-- =================================
-         OVERLAY
-    ================================== -->
+    <!-- OVERLAY -->
 
     <div
         class="overlay"
         id="overlay"
-        onclick="closeMenu()"
     ></div>
 
 
 
-    <!-- =================================
-         SIDE MENU
-    ================================== -->
+    <!-- SIDE MENU -->
 
     <aside
         class="side-menu"
         id="sideMenu"
     >
 
-
         <div class="menu-header">
-
 
             <div class="menu-title">
                 FRIDAY AI
             </div>
 
-
             <button
                 class="close-btn"
-                onclick="closeMenu()"
+                id="closeMenuButton"
+                type="button"
             >
                 ×
             </button>
@@ -214,10 +198,10 @@
         </div>
 
 
-
         <button
             class="menu-item"
-            onclick="openModal('profile')"
+            id="profileMenu"
+            type="button"
         >
             👤 Profile
         </button>
@@ -225,7 +209,8 @@
 
         <button
             class="menu-item"
-            onclick="newChat()"
+            id="newChatButton"
+            type="button"
         >
             💬 New Chat
         </button>
@@ -233,7 +218,8 @@
 
         <button
             class="menu-item"
-            onclick="openModal('history')"
+            id="historyMenu"
+            type="button"
         >
             🕘 Chat History
         </button>
@@ -241,7 +227,8 @@
 
         <button
             class="menu-item"
-            onclick="openModal('plugins')"
+            id="pluginsMenu"
+            type="button"
         >
             🧩 Plugins
         </button>
@@ -249,7 +236,8 @@
 
         <button
             class="menu-item"
-            onclick="openModal('settings')"
+            id="settingsMenu"
+            type="button"
         >
             ⚙️ Settings
         </button>
@@ -258,29 +246,25 @@
 
 
 
-    <!-- =================================
-         MODAL
-    ================================== -->
+    <!-- MODAL -->
 
     <div
         class="modal"
         id="modal"
     >
 
-
         <h2 id="modalTitle">
             FRIDAY AI
         </h2>
-
 
         <p id="modalText">
             Welcome to FRIDAY AI.
         </p>
 
-
         <button
             class="modal-close"
-            onclick="closeModal()"
+            id="modalClose"
+            type="button"
         >
             Close
         </button>
@@ -289,11 +273,9 @@
 
 
 
-    <!-- =================================
-         JAVASCRIPT
-    ================================== -->
+    <!-- JAVASCRIPT -->
 
-    <script src="script.js"></script>
+    <script src="./script.js"></script>
 
 </body>
 
