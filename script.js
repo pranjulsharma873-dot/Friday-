@@ -29,5 +29,6 @@ function sendMessage() {
         reply = "I received your message: " + message;
     }
 
-    alert("FRIDAY: " + reply);
+    // Abhi popup nahi hoga
+    console.log("FRIDAY:", reply);
 }
