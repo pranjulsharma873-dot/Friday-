@@ -485,3 +485,27 @@ HTML ke "<head>" mein inline "<style>...</style>" ki jagah ye laga dena:
 <link rel="stylesheet" href="style.css">
 
 Bas ab structure "index.html" + "style.css" separate ho gaya. 🔥
+.chat-messages {
+    width: 100%;
+    max-width: 500px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.user-message {
+    background: #222;
+    padding: 10px 14px;
+    border-radius: 15px;
+    margin: 8px 0;
+    margin-left: 40px;
+    text-align: right;
+}
+
+.friday-message {
+    background: #111;
+    border: 1px solid #222;
+    padding: 10px 14px;
+    border-radius: 15px;
+    margin: 8px 40px 8px 0;
+}
