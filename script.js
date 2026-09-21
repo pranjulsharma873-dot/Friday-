@@ -49,7 +49,13 @@ if (SpeechRecognitionAPI) {
     };
 
     recognition.onerror = function (event) {
-        micStatus.textContent = "Mic error: " + event.error;
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            micStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
+        } else if (event.error === "no-speech") {
+            micStatus.textContent = "No speech detected. Try again.";
+        } else {
+            micStatus.textContent = "Mic error: " + event.error;
+        }
         stopListening();
     };
 
@@ -63,10 +69,41 @@ function startListening() {
         micStatus.textContent = "Speech recognition not supported on this browser";
         return;
     }
-    isListening = true;
-    micButton.classList.add("active");
-    micStatus.textContent = "Listening...";
-    recognition.start();
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        micStatus.textContent = "Mic access not supported on this browser";
+        return;
+    }
+
+    micStatus.textContent = "Requesting mic permission...";
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function (stream) {
+            // Stop the stream immediately, we only needed it to trigger/check permission
+            stream.getTracks().forEach(function (track) {
+                track.stop();
+            });
+
+            try {
+                isListening = true;
+                micButton.classList.add("active");
+                micStatus.textContent = "Listening...";
+                recognition.start();
+            } catch (err) {
+                micStatus.textContent = "Could not start mic: " + err.message;
+                stopListening();
+            }
+        })
+        .catch(function (err) {
+            if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                micStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
+            } else if (err.name === "NotFoundError") {
+                micStatus.textContent = "No microphone found on this device.";
+            } else {
+                micStatus.textContent = "Mic error: " + err.name;
+            }
+            stopListening();
+        });
 }
 
 function stopListening() {
