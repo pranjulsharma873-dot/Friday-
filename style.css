@@ -176,3 +176,18 @@ body {
 .mic-button:active {
     background: #555;
 }
+.mic-button {
+    width: 55px !important;
+    height: 55px !important;
+    min-width: 55px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 10px;
+    background: #333333;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
