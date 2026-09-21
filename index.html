@@ -1,75 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Zarvis AI</title>
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Zarvis AI Assistant"
+    >
+
+    <title>Zarvis AI</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+
 </head>
+
 
 <body>
 
-<div class="app">
+    <div class="app">
 
-    <div class="sidebar">
 
-        <button class="new-chat" onclick="newChat()">
-            ＋ New Chat
-        </button>
+        <!-- ================= SIDEBAR ================= -->
 
-        <div class="history">
-            <p>Python Learning</p>
-            <p>My AI Project</p>
-            <p>Machine Learning</p>
-        </div>
+        <aside class="sidebar">
 
-    </div>
+            <button
+                class="new-chat"
+                onclick="newChat()"
+            >
+                ＋ New Chat
+            </button>
 
-    <div class="chat">
 
-        <div class="topbar">
-            Zarvis
-        </div>
+            <div class="history">
 
-        <div class="messages" id="messages">
+                <p>Python Learning</p>
 
-            <div class="message ai">
+                <p>My AI Project</p>
 
-                <div class="avatar">
+                <p>Machine Learning</p>
+
+            </div>
+
+        </aside>
+
+
+        <!-- ================= MAIN CHAT ================= -->
+
+        <main class="chat">
+
+
+            <!-- TOP BAR -->
+
+            <header class="topbar">
+
+                <div class="logo">
+
                     🤖
+
+                    <span>
+                        Zarvis
+                    </span>
+
                 </div>
 
-                <div class="text">
-                    Hello 👋<br>
-                    Main tumhara AI assistant hoon.
+            </header>
+
+
+            <!-- ================= MESSAGES ================= -->
+
+            <section
+                class="messages"
+                id="messages"
+            >
+
+
+                <!-- AI WELCOME MESSAGE -->
+
+                <div class="message ai">
+
+                    <div class="avatar">
+                        🤖
+                    </div>
+
+                    <div class="text">
+
+                        <div>
+                            Hello 👋
+                        </div>
+
+                        <div>
+                            Main tumhara AI assistant hoon.
+                        </div>
+
+                    </div>
+
                 </div>
 
-            </div>
 
-        </div>
+            </section>
 
-        <div class="input-area">
 
-            <div class="input-box">
+            <!-- ================= INPUT AREA ================= -->
 
-                <input
-                    type="text"
-                    id="input"
-                    placeholder="Message Zarvis..."
-                    onkeydown="handleEnter(event)"
-                >
+            <footer class="input-area">
 
-                <button onclick="sendMessage()">
-                    ➤
-                </button>
 
-            </div>
+                <div class="input-box">
 
-        </div>
+
+                    <input
+                        type="text"
+                        id="input"
+                        placeholder="Message Zarvis..."
+                        autocomplete="off"
+                        onkeydown="handleEnter(event)"
+                    >
+
+
+                    <button
+                        class="send-button"
+                        onclick="sendMessage()"
+                        aria-label="Send message"
+                    >
+                        ➤
+                    </button>
+
+
+                </div>
+
+
+                <div class="footer-text">
+
+                    Zarvis AI
+
+                </div>
+
+
+            </footer>
+
+
+        </main>
+
 
     </div>
 
-</div>
+
+    <!-- ================= JAVASCRIPT ================= -->
+
+    <script src="script.js"></script>
+
 
 </body>
-</html>
+
+</html> 
