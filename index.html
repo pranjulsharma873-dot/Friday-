@@ -116,28 +116,29 @@
 
                 <div class="input-box">
 
+    <input
+        type="text"
+        id="input"
+        placeholder="Message Zarvis..."
+        autocomplete="off"
+        onkeydown="handleEnter(event)"
+    >
 
-                    <input
-                        type="text"
-                        id="input"
-                        placeholder="Message Zarvis..."
-                        autocomplete="off"
-                        onkeydown="handleEnter(event)"
-                    >
-                    <button 
-                        class="mic-button"
-                        onclick="startListening()" 
-                        aria-label="Voice input">🎤
-                    </button>
+    <button
+        class="mic-button"
+        onclick="startListening()"
+        aria-label="Voice input">
+        🎙️
+    </button>
 
-                    <button
-                        class="send-button"
-                        onclick="sendMessage()"
-                        aria-label="Send message"
-                    >
-                        ➤
-                    </button>
+    <button
+        class="send-button"
+        onclick="sendMessage()"
+        aria-label="Send message">
+        ➤
+    </button>
 
+                </div>
 
                 </div>
 
