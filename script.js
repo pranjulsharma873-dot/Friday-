@@ -1,227 +1,254 @@
-let recognition = null;
-let isListening = false;
-
-// ===============================
-// SEND MESSAGE
-// ===============================
-
-function sendMessage() {
-
-    const input = document.getElementById("input");
-    const messages = document.getElementById("messages");
-
-    const message = input.value.trim();
-
-    if (message === "") return;
-
-    // User message
-    const userMessage = document.createElement("div");
-
-    userMessage.className = "message user";
-
-    userMessage.innerHTML = `
-        <div class="avatar">👤</div>
-        <div class="text">${escapeHTML(message)}</div>
-    `;
-
-    messages.appendChild(userMessage);
-
-    input.value = "";
-
-    messages.scrollTop = messages.scrollHeight;
+/* =================================
+   FRIDAY AI - JAVASCRIPT
+================================= */
 
 
-    // Temporary AI reply
-    setTimeout(function () {
+/* =================================
+   SIDE MENU
+================================= */
 
-        const aiMessage = document.createElement("div");
+function openMenu() {
 
-        aiMessage.className = "message ai";
+    document
+        .getElementById("sideMenu")
+        .classList
+        .add("active");
 
-        aiMessage.innerHTML = `
-            <div class="avatar">🤖</div>
-            <div class="text">
-                Tumne kaha: ${escapeHTML(message)}
-            </div>
-        `;
-
-        messages.appendChild(aiMessage);
-
-        messages.scrollTop = messages.scrollHeight;
-
-        // AI reply ko bolna
-        speakText("Tumne kaha: " + message);
-
-    }, 500);
+    document
+        .getElementById("overlay")
+        .classList
+        .add("active");
 }
 
 
-// ===============================
-// VOICE INPUT
-// ===============================
+function closeMenu() {
 
-function startListening() {
+    document
+        .getElementById("sideMenu")
+        .classList
+        .remove("active");
+
+    document
+        .getElementById("overlay")
+        .classList
+        .remove("active");
+}
+
+
+/* =================================
+   MODAL
+================================= */
+
+function openModal(type) {
+
+    closeMenu();
+
+    const title =
+        document.getElementById("modalTitle");
+
+    const text =
+        document.getElementById("modalText");
+
+
+    if (type === "profile") {
+
+        title.innerText = "Profile";
+
+        text.innerText =
+            "FRIDAY AI User Profile";
+    }
+
+
+    else if (type === "chat") {
+
+        title.innerText = "Chat";
+
+        text.innerText =
+            "Your new FRIDAY AI chat starts here.";
+    }
+
+
+    else if (type === "plugins") {
+
+        title.innerText = "Plugins";
+
+        text.innerText =
+            "Plugins will appear here.";
+    }
+
+
+    else if (type === "history") {
+
+        title.innerText = "Chat History";
+
+        text.innerText =
+            "Your previous conversations will appear here.";
+    }
+
+
+    else if (type === "settings") {
+
+        title.innerText = "Settings";
+
+        text.innerText =
+            "FRIDAY AI settings will appear here.";
+    }
+
+
+    document
+        .getElementById("modal")
+        .classList
+        .add("active");
+}
+
+
+function closeModal() {
+
+    document
+        .getElementById("modal")
+        .classList
+        .remove("active");
+}
+
+
+/* =================================
+   MICROPHONE / SPEECH
+================================= */
+
+function startMic() {
+
+    const status =
+        document.getElementById("micStatus");
+
+    const mic =
+        document.getElementById("micButton");
+
+
+    /* Check browser support */
+
+    if (
+        !("webkitSpeechRecognition" in window) &&
+        !("SpeechRecognition" in window)
+    ) {
+
+        status.innerText =
+            "Voice recognition is not supported";
+
+        return;
+    }
+
 
     const SpeechRecognition =
         window.SpeechRecognition ||
         window.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
 
-        alert("Voice recognition tumhare browser me supported nahi hai.");
-
-        return;
-    }
+    const recognition =
+        new SpeechRecognition();
 
 
-    if (isListening) {
-
-        recognition.stop();
-
-        return;
-    }
-
-
-    recognition = new SpeechRecognition();
-
-    recognition.lang = "hi-IN";
-
-    recognition.continuous = false;
+    recognition.lang = "en-IN";
 
     recognition.interimResults = false;
 
-
-    const micButton =
-        document.getElementById("micButton");
+    recognition.continuous = false;
 
 
-    recognition.onstart = function () {
+    /* Start listening */
 
-        isListening = true;
+    status.innerText =
+        "Listening...";
 
-        if (micButton) {
-            micButton.innerHTML = "🔴";
-        }
-    };
-
-
-    recognition.onresult = function (event) {
-
-        const text =
-            event.results[0][0].transcript;
-
-        document.getElementById("input").value = text;
-
-    };
-
-
-    recognition.onerror = function (event) {
-
-        console.log("Voice error:", event.error);
-
-        if (micButton) {
-            micButton.innerHTML = "🎙️";
-        }
-
-        isListening = false;
-    };
-
-
-    recognition.onend = function () {
-
-        isListening = false;
-
-        if (micButton) {
-            micButton.innerHTML = "🎙️";
-        }
-    };
+    mic.innerText = "🔴";
 
 
     recognition.start();
+
+
+    /* Voice result */
+
+    recognition.onresult = function(event) {
+
+        const result =
+            event.results[0][0].transcript;
+
+
+        document
+            .getElementById("chatInput")
+            .value = result;
+
+
+        status.innerText =
+            "Voice received";
+
+        mic.innerText = "🎙️";
+    };
+
+
+    /* Error */
+
+    recognition.onerror = function(event) {
+
+        status.innerText =
+            "Couldn't hear you";
+
+        mic.innerText = "🎙️";
+
+        console.log(
+            "Speech error:",
+            event.error
+        );
+    };
+
+
+    /* Finished */
+
+    recognition.onend = function() {
+
+        mic.innerText = "🎙️";
+    };
 }
 
 
-// ===============================
-// TEXT TO SPEECH
-// ===============================
+/* =================================
+   CHAT
+================================= */
 
-function speakText(text) {
+function sendMessage() {
 
-    if (!("speechSynthesis" in window)) {
+    const input =
+        document.getElementById("chatInput");
 
-        console.log("Speech synthesis supported nahi hai.");
 
+    const message =
+        input.value.trim();
+
+
+    if (message === "") {
         return;
     }
 
 
-    window.speechSynthesis.cancel();
+    /*
+       Temporary response.
+       Later yahan AI API connect karenge.
+    */
 
-    const speech =
-        new SpeechSynthesisUtterance(text);
+    alert("You: " + message);
 
-    speech.lang = "hi-IN";
 
-    speech.rate = 1;
-
-    speech.pitch = 1;
-
-    speech.volume = 1;
-
-    window.speechSynthesis.speak(speech);
+    input.value = "";
 }
 
 
-// ===============================
-// ENTER KEY
-// ===============================
+/* =================================
+   ENTER KEY
+================================= */
 
 function handleEnter(event) {
 
     if (event.key === "Enter") {
 
         sendMessage();
-
     }
 }
-
-
-// ===============================
-// NEW CHAT
-// ===============================
-
-function newChat() {
-
-    const messages =
-        document.getElementById("messages");
-
-    messages.innerHTML = `
-        <div class="message ai">
-
-            <div class="avatar">
-                🤖
-            </div>
-
-            <div class="text">
-                Hello 👋<br>
-                Main tumhara AI assistant hoon.
-            </div>
-
-        </div>
-    `;
-}
-
-
-// ===============================
-// SECURITY
-// ===============================
-
-function escapeHTML(text) {
-
-    const div =
-        document.createElement("div");
-
-    div.textContent = text;
-
-    return div.innerHTML;
-        }
