@@ -9,9 +9,7 @@ function sendMessage() {
 
     input.value = "";
 
-    // Temporary FRIDAY response
     let reply = "";
-
     const msg = message.toLowerCase();
 
     if (msg === "hi" || msg === "hello") {
@@ -25,10 +23,10 @@ function sendMessage() {
     }
     else if (msg.includes("time")) {
         reply = "The current time is " +
-            new Date().toLocaleTimeString();
+                new Date().toLocaleTimeString();
     }
     else {
-        reply = "I received: " + message;
+        reply = "I received your message: " + message;
     }
 
     alert("FRIDAY: " + reply);
