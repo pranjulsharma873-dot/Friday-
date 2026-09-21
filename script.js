@@ -32,6 +32,51 @@ const modalText = document.getElementById("modalText");
 const modalClose = document.getElementById("modalClose");
 
 let isListening = false;
+let recognition = null;
+
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognitionAPI) {
+    recognition = new SpeechRecognitionAPI();
+    recognition.lang = "en-IN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = function (event) {
+        const transcript = event.results[0][0].transcript;
+        chatInput.value = transcript;
+        sendMessage();
+    };
+
+    recognition.onerror = function (event) {
+        micStatus.textContent = "Mic error: " + event.error;
+        stopListening();
+    };
+
+    recognition.onend = function () {
+        stopListening();
+    };
+}
+
+function startListening() {
+    if (!recognition) {
+        micStatus.textContent = "Speech recognition not supported on this browser";
+        return;
+    }
+    isListening = true;
+    micButton.classList.add("active");
+    micStatus.textContent = "Listening...";
+    recognition.start();
+}
+
+function stopListening() {
+    isListening = false;
+    micButton.classList.remove("active");
+    micStatus.textContent = "Tap microphone to talk";
+    if (recognition) {
+        recognition.stop();
+    }
+}
 
 
 // ============================
@@ -89,14 +134,10 @@ profileButton.addEventListener("click", function () {
 // ============================
 
 micButton.addEventListener("click", function () {
-    isListening = !isListening;
-
     if (isListening) {
-        micButton.classList.add("active");
-        micStatus.textContent = "Listening...";
+        stopListening();
     } else {
-        micButton.classList.remove("active");
-        micStatus.textContent = "Tap microphone to talk";
+        startListening();
     }
 });
 
