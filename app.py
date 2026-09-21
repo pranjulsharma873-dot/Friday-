@@ -1,78 +1,66 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
-from openai import OpenAI
-import os
 
 app = Flask(__name__)
-CORS(app)
 
-# API key environment variable se aayegi
-client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY")
-)
 
-# Zarvis ki personality
-SYSTEM_PROMPT = """
-You are Zarvis, a helpful personal AI assistant.
+# ================================
+# FRIDAY AI RESPONSE
+# ================================
 
-Rules:
-- Understand Hindi, English and Hinglish.
-- Reply naturally and clearly.
-- Be friendly and conversational.
-- Keep answers reasonably concise unless the user asks for detail.
-- Remember the conversation provided in the current request.
-"""
+def friday_response(message):
 
-@app.route("/")
-def home():
-    return "Zarvis AI Backend is running."
+    message = message.lower().strip()
 
+    if "hello" in message or "hi" in message:
+        return "Hello! I am FRIDAY. How can I help you?"
+
+    elif "your name" in message:
+        return "My name is FRIDAY AI."
+
+    elif "how are you" in message:
+        return "I am working perfectly."
+
+    elif "time" in message:
+        from datetime import datetime
+        return "Current time is " + datetime.now().strftime("%I:%M %p")
+
+    elif "date" in message:
+        from datetime import datetime
+        return "Today's date is " + datetime.now().strftime("%d-%m-%Y")
+
+    elif "bye" in message:
+        return "Goodbye! See you soon."
+
+    else:
+        return "I received your message: " + message
+
+
+# ================================
+# CHAT API
+# ================================
 
 @app.route("/chat", methods=["POST"])
 def chat():
 
-    try:
+    data = request.get_json()
 
-        data = request.get_json()
+    message = data.get("message", "")
 
-        user_message = data.get("message", "").strip()
+    response = friday_response(message)
 
-        if not user_message:
-            return jsonify({
-                "error": "Message is empty"
-            }), 400
-
-
-        response = client.responses.create(
-
-            model="gpt-5.6-luna",
-
-            instructions=SYSTEM_PROMPT,
-
-            input=user_message
-
-        )
+    return jsonify({
+        "reply": response
+    })
 
 
-        answer = response.output_text
-
-
-        return jsonify({
-            "reply": answer
-        })
-
-
-    except Exception as e:
-
-        return jsonify({
-            "error": str(e)
-        }), 500
-
+# ================================
+# START SERVER
+# ================================
 
 if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
         port=5000,
-        debug=False
-            )
+        debug=True
+    )
