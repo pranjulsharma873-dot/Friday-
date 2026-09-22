@@ -180,6 +180,27 @@ micButton.addEventListener("click", function () {
 
 
 // ============================
+// TEXT TO SPEECH
+// ============================
+
+function speakText(text) {
+    if (!window.speechSynthesis) {
+        return;
+    }
+
+    // Cancel any ongoing speech before speaking the new message
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-IN";
+    utterance.rate = 1;
+    utterance.pitch = 1;
+
+    window.speechSynthesis.speak(utterance);
+}
+
+
+// ============================
 // CHAT INPUT
 // ============================
 
@@ -214,6 +235,8 @@ function sendMessage() {
 
         chatMessages.appendChild(fridayMessage);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        speakText(fridayMessage.textContent);
 
     }, 500);
 }
