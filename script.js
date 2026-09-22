@@ -667,4 +667,4 @@ async function captureAndAsk() {
 
     const question = cameraQuestionInput.value.trim() || "What do you see in this image?";
 
-    const replyText = await ask
+    const replyText = await 
