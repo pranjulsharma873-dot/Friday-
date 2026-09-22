@@ -31,6 +31,14 @@ const modalTitle = document.getElementById("modalTitle");
 const modalText = document.getElementById("modalText");
 const modalClose = document.getElementById("modalClose");
 
+const voiceModeButton = document.getElementById("voiceModeButton");
+const voiceMode = document.getElementById("voiceMode");
+const voiceOrb = document.getElementById("voiceOrb");
+const voiceModeStatus = document.getElementById("voiceModeStatus");
+const voiceModeMute = document.getElementById("voiceModeMute");
+const voiceModeClose = document.getElementById("voiceModeClose");
+const voiceModeMinimize = document.getElementById("voiceModeMinimize");
+
 let isListening = false;
 let recognition = null;
 
@@ -183,8 +191,11 @@ micButton.addEventListener("click", function () {
 // TEXT TO SPEECH
 // ============================
 
-function speakText(text) {
+function speakText(text, onEnd) {
     if (!window.speechSynthesis) {
+        if (onEnd) {
+            onEnd();
+        }
         return;
     }
 
@@ -196,7 +207,27 @@ function speakText(text) {
     utterance.rate = 1;
     utterance.pitch = 1;
 
+    if (onEnd) {
+        utterance.onend = onEnd;
+        utterance.onerror = onEnd;
+    }
+
     window.speechSynthesis.speak(utterance);
+}
+
+
+// ============================
+// FRIDAY REPLY LOGIC (shared)
+// ============================
+
+function getFridayReply(message) {
+    const lower = message.toLowerCase();
+
+    if (lower === "hi" || lower === "hello") {
+        return "Hello! I am FRIDAY. How can I help you?";
+    }
+
+    return "I received your message: " + message;
 }
 
 
@@ -226,12 +257,7 @@ function sendMessage() {
 
         const fridayMessage = document.createElement("div");
         fridayMessage.className = "friday-message";
-
-        if (message.toLowerCase() === "hi" || message.toLowerCase() === "hello") {
-            fridayMessage.textContent = "Hello! I am FRIDAY. How can I help you?";
-        } else {
-            fridayMessage.textContent = "I received your message: " + message;
-        }
+        fridayMessage.textContent = getFridayReply(message);
 
         chatMessages.appendChild(fridayMessage);
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -301,4 +327,158 @@ pluginsMenu.addEventListener("click", function () {
 settingsMenu.addEventListener("click", function () {
     closeMenu();
     openModal("Settings", "Settings panel coming soon.");
+});
+
+
+// ============================
+// VOICE MODE (FULL SCREEN)
+// ============================
+
+let voiceModeActive = false;
+let voiceMuted = false;
+let voiceRecognition = null;
+
+if (SpeechRecognitionAPI) {
+    voiceRecognition = new SpeechRecognitionAPI();
+    voiceRecognition.lang = "en-IN";
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = false;
+
+    voiceRecognition.onresult = function (event) {
+        const transcript = event.results[0][0].transcript;
+        handleVoiceModeMessage(transcript);
+    };
+
+    voiceRecognition.onerror = function (event) {
+        if (!voiceModeActive) {
+            return;
+        }
+
+        if (event.error === "no-speech") {
+            // Silence timeout — just listen again
+            if (!voiceMuted) {
+                startVoiceListening();
+            }
+            return;
+        }
+
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            voiceModeStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
+        } else {
+            voiceModeStatus.textContent = "Mic error: " + event.error;
+        }
+
+        voiceOrb.classList.remove("listening");
+    };
+}
+
+function startVoiceListening() {
+    if (!voiceRecognition) {
+        voiceModeStatus.textContent = "Speech recognition not supported on this browser";
+        return;
+    }
+
+    voiceModeStatus.textContent = "Requesting mic permission...";
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function (stream) {
+            stream.getTracks().forEach(function (track) {
+                track.stop();
+            });
+
+            try {
+                voiceOrb.classList.remove("speaking");
+                voiceOrb.classList.add("listening");
+                voiceModeStatus.textContent = "Listening...";
+                voiceRecognition.start();
+            } catch (err) {
+                // Recognition may already be running — ignore duplicate start errors
+            }
+        })
+        .catch(function (err) {
+            if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                voiceModeStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
+            } else if (err.name === "NotFoundError") {
+                voiceModeStatus.textContent = "No microphone found on this device.";
+            } else {
+                voiceModeStatus.textContent = "Mic error: " + err.name;
+            }
+            voiceOrb.classList.remove("listening");
+        });
+}
+
+function handleVoiceModeMessage(transcript) {
+
+    voiceOrb.classList.remove("listening");
+    voiceModeStatus.textContent = "Thinking...";
+
+    // Add to the main chat log too
+    const userMessage = document.createElement("div");
+    userMessage.className = "user-message";
+    userMessage.textContent = transcript;
+    chatMessages.appendChild(userMessage);
+
+    const replyText = getFridayReply(transcript);
+
+    const fridayMessage = document.createElement("div");
+    fridayMessage.className = "friday-message";
+    fridayMessage.textContent = replyText;
+    chatMessages.appendChild(fridayMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    voiceOrb.classList.add("speaking");
+    voiceModeStatus.textContent = replyText;
+
+    speakText(replyText, function () {
+        voiceOrb.classList.remove("speaking");
+
+        if (voiceModeActive && !voiceMuted) {
+            startVoiceListening();
+        }
+    });
+}
+
+function openVoiceMode() {
+    voiceModeActive = true;
+    voiceMuted = false;
+    voiceModeMute.classList.remove("muted");
+    voiceMode.classList.add("active");
+    voiceOrb.classList.remove("listening", "speaking");
+    voiceModeStatus.textContent = "Starting...";
+
+    startVoiceListening();
+}
+
+function closeVoiceMode() {
+    voiceModeActive = false;
+
+    if (voiceRecognition) {
+        voiceRecognition.stop();
+    }
+
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+    }
+
+    voiceOrb.classList.remove("listening", "speaking");
+    voiceMode.classList.remove("active");
+}
+
+voiceModeButton.addEventListener("click", openVoiceMode);
+voiceModeClose.addEventListener("click", closeVoiceMode);
+voiceModeMinimize.addEventListener("click", closeVoiceMode);
+
+voiceModeMute.addEventListener("click", function () {
+    voiceMuted = !voiceMuted;
+    voiceModeMute.classList.toggle("muted", voiceMuted);
+
+    if (voiceMuted) {
+        if (voiceRecognition) {
+            voiceRecognition.stop();
+        }
+        voiceOrb.classList.remove("listening");
+        voiceModeStatus.textContent = "Microphone muted";
+    } else {
+        startVoiceListening();
+    }
 });
