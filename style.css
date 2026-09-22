@@ -417,6 +417,8 @@ body {
     top: 20px;
     left: 20px;
     z-index: 61;
+    display: flex;
+    gap: 12px;
 }
 
 .camera-close {
