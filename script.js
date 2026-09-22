@@ -39,6 +39,15 @@ const voiceModeMute = document.getElementById("voiceModeMute");
 const voiceModeClose = document.getElementById("voiceModeClose");
 const voiceModeMinimize = document.getElementById("voiceModeMinimize");
 
+const cameraButton = document.getElementById("cameraButton");
+const cameraMode = document.getElementById("cameraMode");
+const cameraVideo = document.getElementById("cameraVideo");
+const cameraCanvas = document.getElementById("cameraCanvas");
+const cameraStatus = document.getElementById("cameraStatus");
+const cameraCloseButton = document.getElementById("cameraCloseButton");
+const cameraCaptureButton = document.getElementById("cameraCaptureButton");
+const cameraQuestionInput = document.getElementById("cameraQuestionInput");
+
 let isListening = false;
 let recognition = null;
 
@@ -233,17 +242,79 @@ function unlockSpeechSynthesis() {
 
 
 // ============================
-// FRIDAY REPLY LOGIC (shared)
+// BACKEND CONFIG
 // ============================
 
-function getFridayReply(message) {
-    const lower = message.toLowerCase();
+// Replace this with your deployed backend URL (e.g. from Render/Railway)
+// Example: "https://friday-ai-backend.onrender.com"
+const BACKEND_URL = "https://YOUR-BACKEND-URL-HERE.onrender.com";
 
-    if (lower === "hi" || lower === "hello") {
-        return "Hello! I am FRIDAY. How can I help you?";
+const sessionId = "session-" + Math.random().toString(36).slice(2);
+
+
+// ============================
+// FRIDAY REPLY LOGIC (real AI via backend)
+// ============================
+
+async function getFridayReply(message) {
+    try {
+        const response = await fetch(BACKEND_URL + "/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: message,
+                session_id: sessionId
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Server responded with status " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            return "Sorry, I ran into an error: " + data.error;
+        }
+
+        return data.reply;
+
+    } catch (err) {
+        return "Sorry, I couldn't reach FRIDAY's brain right now. (" + err.message + ")";
     }
+}
 
-    return "I received your message: " + message;
+async function askFridayAboutImage(imageBase64, question) {
+    try {
+        const response = await fetch(BACKEND_URL + "/vision", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                image: imageBase64,
+                message: question,
+                session_id: sessionId
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Server responded with status " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            return "Sorry, I ran into an error: " + data.error;
+        }
+
+        return data.reply;
+
+    } catch (err) {
+        return "Sorry, I couldn't reach FRIDAY's brain right now. (" + err.message + ")";
+    }
 }
 
 
@@ -251,7 +322,7 @@ function getFridayReply(message) {
 // CHAT INPUT
 // ============================
 
-function sendMessage() {
+async function sendMessage() {
 
     const message = chatInput.value.trim();
 
@@ -268,19 +339,19 @@ function sendMessage() {
     // Clear input
     chatInput.value = "";
 
-    // FRIDAY reply
-    setTimeout(function () {
+    // "Typing..." placeholder while we wait for the real AI reply
+    const typingMessage = document.createElement("div");
+    typingMessage.className = "friday-message";
+    typingMessage.textContent = "FRIDAY is typing...";
+    chatMessages.appendChild(typingMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        const fridayMessage = document.createElement("div");
-        fridayMessage.className = "friday-message";
-        fridayMessage.textContent = getFridayReply(message);
+    const replyText = await getFridayReply(message);
 
-        chatMessages.appendChild(fridayMessage);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+    typingMessage.textContent = replyText;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        speakText(fridayMessage.textContent);
-
-    }, 500);
+    speakText(replyText);
 }
 
 function handleEnter(event) {
@@ -423,7 +494,7 @@ function startVoiceListening() {
         });
 }
 
-function handleVoiceModeMessage(transcript) {
+async function handleVoiceModeMessage(transcript) {
 
     voiceOrb.classList.remove("listening");
     voiceModeStatus.textContent = "Thinking...";
@@ -433,8 +504,9 @@ function handleVoiceModeMessage(transcript) {
     userMessage.className = "user-message";
     userMessage.textContent = transcript;
     chatMessages.appendChild(userMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    const replyText = getFridayReply(transcript);
+    const replyText = await getFridayReply(transcript);
 
     const fridayMessage = document.createElement("div");
     fridayMessage.className = "friday-message";
@@ -499,3 +571,93 @@ voiceModeMute.addEventListener("click", function () {
         startVoiceListening();
     }
 });
+
+
+// ============================
+// LIVE CAMERA
+// ============================
+
+let cameraStream = null;
+
+async function openCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Camera not supported on this browser");
+        return;
+    }
+
+    unlockSpeechSynthesis();
+    cameraMode.classList.add("active");
+    cameraStatus.textContent = "Requesting camera permission...";
+
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+            audio: false
+        });
+
+        cameraVideo.srcObject = cameraStream;
+        cameraStatus.textContent = "Point the camera and ask FRIDAY";
+
+    } catch (err) {
+        cameraStatus.textContent = "Camera permission denied or unavailable.";
+    }
+}
+
+function closeCamera() {
+    cameraMode.classList.remove("active");
+
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(function (track) {
+            track.stop();
+        });
+        cameraStream = null;
+    }
+
+    cameraVideo.srcObject = null;
+    cameraQuestionInput.value = "";
+}
+
+async function captureAndAsk() {
+    if (!cameraStream) {
+        return;
+    }
+
+    cameraCaptureButton.disabled = true;
+    cameraStatus.textContent = "Analyzing image...";
+
+    // Draw the current video frame onto the hidden canvas
+    cameraCanvas.width = cameraVideo.videoWidth;
+    cameraCanvas.height = cameraVideo.videoHeight;
+    const ctx = cameraCanvas.getContext("2d");
+    ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+    // Convert to base64 JPEG (strip the data-URL prefix, backend adds it back)
+    const dataUrl = cameraCanvas.toDataURL("image/jpeg", 0.8);
+    const imageBase64 = dataUrl.split(",")[1];
+
+    const question = cameraQuestionInput.value.trim() || "What do you see in this image?";
+
+    const replyText = await askFridayAboutImage(imageBase64, question);
+
+    cameraStatus.textContent = replyText;
+    cameraCaptureButton.disabled = false;
+    cameraQuestionInput.value = "";
+
+    // Log it in the main chat too
+    const userMessage = document.createElement("div");
+    userMessage.className = "user-message";
+    userMessage.textContent = "📷 " + question;
+    chatMessages.appendChild(userMessage);
+
+    const fridayMessage = document.createElement("div");
+    fridayMessage.className = "friday-message";
+    fridayMessage.textContent = replyText;
+    chatMessages.appendChild(fridayMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    speakText(replyText);
+}
+
+cameraButton.addEventListener("click", openCamera);
+cameraCloseButton.addEventListener("click", closeCamera);
+cameraCaptureButton.addEventListener("click", captureAndAsk);
