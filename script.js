@@ -45,6 +45,7 @@ const cameraVideo = document.getElementById("cameraVideo");
 const cameraCanvas = document.getElementById("cameraCanvas");
 const cameraStatus = document.getElementById("cameraStatus");
 const cameraCloseButton = document.getElementById("cameraCloseButton");
+const cameraFlipButton = document.getElementById("cameraFlipButton");
 const cameraCaptureButton = document.getElementById("cameraCaptureButton");
 const cameraQuestionInput = document.getElementById("cameraQuestionInput");
 
@@ -578,6 +579,7 @@ voiceModeMute.addEventListener("click", function () {
 // ============================
 
 let cameraStream = null;
+let currentFacingMode = "environment"; // "environment" = back camera, "user" = front/selfie camera
 
 async function openCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -587,11 +589,23 @@ async function openCamera() {
 
     unlockSpeechSynthesis();
     cameraMode.classList.add("active");
+    await startCameraStream();
+}
+
+async function startCameraStream() {
     cameraStatus.textContent = "Requesting camera permission...";
+
+    // Stop any existing stream before starting a new one
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(function (track) {
+            track.stop();
+        });
+        cameraStream = null;
+    }
 
     try {
         cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
+            video: { facingMode: currentFacingMode },
             audio: false
         });
 
@@ -599,8 +613,24 @@ async function openCamera() {
         cameraStatus.textContent = "Point the camera and ask FRIDAY";
 
     } catch (err) {
-        cameraStatus.textContent = "Camera permission denied or unavailable.";
+        // Some devices don't support the requested facingMode exactly —
+        // fall back to any available camera
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: false
+            });
+            cameraVideo.srcObject = cameraStream;
+            cameraStatus.textContent = "Point the camera and ask FRIDAY";
+        } catch (err2) {
+            cameraStatus.textContent = "Camera permission denied or unavailable.";
+        }
     }
+}
+
+function flipCamera() {
+    currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+    startCameraStream();
 }
 
 function closeCamera() {
@@ -637,27 +667,4 @@ async function captureAndAsk() {
 
     const question = cameraQuestionInput.value.trim() || "What do you see in this image?";
 
-    const replyText = await askFridayAboutImage(imageBase64, question);
-
-    cameraStatus.textContent = replyText;
-    cameraCaptureButton.disabled = false;
-    cameraQuestionInput.value = "";
-
-    // Log it in the main chat too
-    const userMessage = document.createElement("div");
-    userMessage.className = "user-message";
-    userMessage.textContent = "📷 " + question;
-    chatMessages.appendChild(userMessage);
-
-    const fridayMessage = document.createElement("div");
-    fridayMessage.className = "friday-message";
-    fridayMessage.textContent = replyText;
-    chatMessages.appendChild(fridayMessage);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    speakText(replyText);
-}
-
-cameraButton.addEventListener("click", openCamera);
-cameraCloseButton.addEventListener("click", closeCamera);
-cameraCaptureButton.addEventListener("click", captureAndAsk);
+    const replyText = await ask
