@@ -635,4 +635,4 @@ async function handleVoiceModeMessage(transcript) {
     voiceModeStatus.textContent = "Thinking...";
 
     // Add to the main chat log too
-    
+    c
