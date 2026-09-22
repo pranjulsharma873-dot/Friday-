@@ -243,78 +243,212 @@ function unlockSpeechSynthesis() {
 
 
 // ============================
-// BACKEND CONFIG
+// LOCAL OBJECT-DETECTION MODEL
+// (runs fully in the browser via TensorFlow.js — no key, no server)
 // ============================
 
-// Replace this with your deployed backend URL (e.g. from Render/Railway)
-// Example: "https://friday-ai-backend.onrender.com"
-const BACKEND_URL = "https://YOUR-BACKEND-URL-HERE.onrender.com";
+let objectDetectionModel = null;
+let modelLoadingPromise = null;
 
-const sessionId = "session-" + Math.random().toString(36).slice(2);
-
-
-// ============================
-// FRIDAY REPLY LOGIC (real AI via backend)
-// ============================
-
-async function getFridayReply(message) {
-    try {
-        const response = await fetch(BACKEND_URL + "/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: message,
-                session_id: sessionId
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error("Server responded with status " + response.status);
-        }
-
-        const data = await response.json();
-
-        if (data.error) {
-            return "Sorry, I ran into an error: " + data.error;
-        }
-
-        return data.reply;
-
-    } catch (err) {
-        return "Sorry, I couldn't reach FRIDAY's brain right now. (" + err.message + ")";
+function loadDetectionModel() {
+    if (objectDetectionModel) {
+        return Promise.resolve(objectDetectionModel);
     }
+    if (!modelLoadingPromise) {
+        modelLoadingPromise = cocoSsd.load().then(function (model) {
+            objectDetectionModel = model;
+            return model;
+        });
+    }
+    return modelLoadingPromise;
+}
+
+
+// ============================
+// FRIDAY'S BRAIN (fully self-made, runs in the browser — no API, no key)
+// ============================
+
+const userName = null; // could be set later if you add a "remember my name" feature
+
+function getRandomFrom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function tryMath(message) {
+    // Matches things like "5 + 3", "what is 12 * 4", "10 divided by 2"
+    const cleaned = message
+        .toLowerCase()
+        .replace(/plus/g, "+")
+        .replace(/minus/g, "-")
+        .replace(/times|multiplied by/g, "*")
+        .replace(/divided by/g, "/")
+        .replace(/what is|what's|calculate|solve/g, "")
+        .trim();
+
+    const mathMatch = cleaned.match(/(-?\d+(\.\d+)?)\s*([\+\-\*\/])\s*(-?\d+(\.\d+)?)/);
+
+    if (!mathMatch) {
+        return null;
+    }
+
+    const a = parseFloat(mathMatch[1]);
+    const op = mathMatch[3];
+    const b = parseFloat(mathMatch[4]);
+    let result;
+
+    if (op === "+") result = a + b;
+    else if (op === "-") result = a - b;
+    else if (op === "*") result = a * b;
+    else if (op === "/") result = b !== 0 ? a / b : null;
+
+    if (result === null) {
+        return "You can't divide by zero!";
+    }
+
+    return a + " " + op + " " + b + " = " + result;
+}
+
+function getFridayReplySync(message) {
+    const text = message.toLowerCase().trim();
+
+    // --- Greetings ---
+    if (/^(hi|hii+|hello+|hey+|namaste|yo)\b/.test(text)) {
+        return getRandomFrom([
+            "Hello! How can I help you today?",
+            "Hi there! What can I do for you?",
+            "Hey! I'm listening."
+        ]);
+    }
+
+    // --- How are you ---
+    if (text.includes("how are you")) {
+        return "I'm running smoothly, thanks for asking! How are you doing?";
+    }
+
+    // --- Identity ---
+    if (text.includes("your name")) {
+        return "I'm FRIDAY, your personal AI assistant.";
+    }
+
+    if (text.includes("who made you") || text.includes("who created you") || text.includes("who built you")) {
+        return "I was built and coded by you — my own custom-made assistant!";
+    }
+
+    // --- Time / Date ---
+    if (text.includes("time") && !text.includes("sometime")) {
+        const now = new Date();
+        return "It's currently " + now.toLocaleTimeString();
+    }
+
+    if (text.includes("date") || text.includes("today")) {
+        const now = new Date();
+        return "Today's date is " + now.toLocaleDateString(undefined, {
+            weekday: "long", year: "numeric", month: "long", day: "numeric"
+        });
+    }
+
+    // --- Math ---
+    const mathResult = tryMath(text);
+    if (mathResult) {
+        return mathResult;
+    }
+
+    // --- Jokes ---
+    if (text.includes("joke")) {
+        return getRandomFrom([
+            "Why don't robots ever panic? Because they have great byte control!",
+            "Why did the computer go to the doctor? It caught a virus!",
+            "I would tell you a UDP joke, but you might not get it.",
+            "Why do programmers prefer dark mode? Because light attracts bugs!"
+        ]);
+    }
+
+    // --- Thanks ---
+    if (text.includes("thank")) {
+        return getRandomFrom(["You're welcome!", "Anytime!", "Happy to help!"]);
+    }
+
+    // --- Bye ---
+    if (/\b(bye|goodbye|see you|good night)\b/.test(text)) {
+        return getRandomFrom(["Goodbye! Talk to you soon.", "See you later!", "Take care!"]);
+    }
+
+    // --- Capabilities ---
+    if (text.includes("what can you do") || text.includes("help me")) {
+        return "I can chat with you, tell the time and date, do quick math, tell jokes, and even look through the camera to describe what it sees!";
+    }
+
+    // --- Fallback ---
+    return getRandomFrom([
+        "I heard you say: \"" + message + "\" — I'm still learning, so I might not fully understand that yet.",
+        "Interesting! Tell me more about that.",
+        "I'm not sure how to respond to that yet, but I'm listening."
+    ]);
+}
+
+// Kept async so the rest of the app (which awaits this function) doesn't
+// need to change — but it now resolves instantly with no network call.
+async function getFridayReply(message) {
+    return getFridayReplySync(message);
 }
 
 async function askFridayAboutImage(imageBase64, question) {
     try {
-        const response = await fetch(BACKEND_URL + "/vision", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                image: imageBase64,
-                message: question,
-                session_id: sessionId
-            })
+        if (typeof cocoSsd === "undefined") {
+            return "The object-detection model didn't load. Check your internet connection and reload the page.";
+        }
+
+        const model = await loadDetectionModel();
+
+        // Build an image element from the captured photo
+        const img = new Image();
+        await new Promise(function (resolve, reject) {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = "data:image/jpeg;base64," + imageBase64;
         });
 
-        if (!response.ok) {
-            throw new Error("Server responded with status " + response.status);
+        const predictions = await model.detect(img);
+
+        if (predictions.length === 0) {
+            return "I couldn't clearly identify anything in that image. Try moving closer or improving the lighting.";
         }
 
-        const data = await response.json();
+        // Keep only reasonably confident predictions
+        const confident = predictions
+            .filter(function (p) { return p.score > 0.5; })
+            .sort(function (a, b) { return b.score - a.score; });
 
-        if (data.error) {
-            return "Sorry, I ran into an error: " + data.error;
+        const itemsToReport = confident.length > 0 ? confident : predictions;
+        const names = itemsToReport.slice(0, 5).map(function (p) { return p.class; });
+
+        // Count duplicates (e.g. two "person" -> "2 persons")
+        const counts = {};
+        names.forEach(function (name) {
+            counts[name] = (counts[name] || 0) + 1;
+        });
+
+        const parts = Object.keys(counts).map(function (name) {
+            const count = counts[name];
+            return count > 1 ? (count + " " + name + "s") : ("a " + name);
+        });
+
+        let description;
+        if (parts.length === 1) {
+            description = "I can see " + parts[0] + ".";
+        } else {
+            description = "I can see " + parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] + ".";
         }
 
-        return data.reply;
+        // Object detection can't read text — flag that limitation if relevant
+        if (/read|text|written|says?\b/i.test(question)) {
+            description = "I can't read text yet, but here's what I can identify: " + description;
+        }
+
+        return description;
 
     } catch (err) {
-        return "Sorry, I couldn't reach FRIDAY's brain right now. (" + err.message + ")";
+        return "Sorry, I had trouble analyzing that image. (" + err.message + ")";
     }
 }
 
@@ -501,170 +635,4 @@ async function handleVoiceModeMessage(transcript) {
     voiceModeStatus.textContent = "Thinking...";
 
     // Add to the main chat log too
-    const userMessage = document.createElement("div");
-    userMessage.className = "user-message";
-    userMessage.textContent = transcript;
-    chatMessages.appendChild(userMessage);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    const replyText = await getFridayReply(transcript);
-
-    const fridayMessage = document.createElement("div");
-    fridayMessage.className = "friday-message";
-    fridayMessage.textContent = replyText;
-    chatMessages.appendChild(fridayMessage);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    voiceOrb.classList.add("speaking");
-    voiceModeStatus.textContent = replyText;
-
-    speakText(replyText, function () {
-        voiceOrb.classList.remove("speaking");
-
-        if (voiceModeActive && !voiceMuted) {
-            startVoiceListening();
-        }
-    });
-}
-
-function openVoiceMode() {
-    voiceModeActive = true;
-    voiceMuted = false;
-    voiceModeMute.classList.remove("muted");
-    voiceMode.classList.add("active");
-    voiceOrb.classList.remove("listening", "speaking");
-    voiceModeStatus.textContent = "Starting...";
-
-    unlockSpeechSynthesis();
-    startVoiceListening();
-}
-
-function closeVoiceMode() {
-    voiceModeActive = false;
-
-    if (voiceRecognition) {
-        voiceRecognition.stop();
-    }
-
-    if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-    }
-
-    voiceOrb.classList.remove("listening", "speaking");
-    voiceMode.classList.remove("active");
-}
-
-voiceModeButton.addEventListener("click", openVoiceMode);
-voiceModeClose.addEventListener("click", closeVoiceMode);
-voiceModeMinimize.addEventListener("click", closeVoiceMode);
-
-voiceModeMute.addEventListener("click", function () {
-    voiceMuted = !voiceMuted;
-    voiceModeMute.classList.toggle("muted", voiceMuted);
-
-    if (voiceMuted) {
-        if (voiceRecognition) {
-            voiceRecognition.stop();
-        }
-        voiceOrb.classList.remove("listening");
-        voiceModeStatus.textContent = "Microphone muted";
-    } else {
-        startVoiceListening();
-    }
-});
-
-
-// ============================
-// LIVE CAMERA
-// ============================
-
-let cameraStream = null;
-let currentFacingMode = "environment"; // "environment" = back camera, "user" = front/selfie camera
-
-async function openCamera() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Camera not supported on this browser");
-        return;
-    }
-
-    unlockSpeechSynthesis();
-    cameraMode.classList.add("active");
-    await startCameraStream();
-}
-
-async function startCameraStream() {
-    cameraStatus.textContent = "Requesting camera permission...";
-
-    // Stop any existing stream before starting a new one
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(function (track) {
-            track.stop();
-        });
-        cameraStream = null;
-    }
-
-    try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: currentFacingMode },
-            audio: false
-        });
-
-        cameraVideo.srcObject = cameraStream;
-        cameraStatus.textContent = "Point the camera and ask FRIDAY";
-
-    } catch (err) {
-        // Some devices don't support the requested facingMode exactly —
-        // fall back to any available camera
-        try {
-            cameraStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: false
-            });
-            cameraVideo.srcObject = cameraStream;
-            cameraStatus.textContent = "Point the camera and ask FRIDAY";
-        } catch (err2) {
-            cameraStatus.textContent = "Camera permission denied or unavailable.";
-        }
-    }
-}
-
-function flipCamera() {
-    currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
-    startCameraStream();
-}
-
-function closeCamera() {
-    cameraMode.classList.remove("active");
-
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(function (track) {
-            track.stop();
-        });
-        cameraStream = null;
-    }
-
-    cameraVideo.srcObject = null;
-    cameraQuestionInput.value = "";
-}
-
-async function captureAndAsk() {
-    if (!cameraStream) {
-        return;
-    }
-
-    cameraCaptureButton.disabled = true;
-    cameraStatus.textContent = "Analyzing image...";
-
-    // Draw the current video frame onto the hidden canvas
-    cameraCanvas.width = cameraVideo.videoWidth;
-    cameraCanvas.height = cameraVideo.videoHeight;
-    const ctx = cameraCanvas.getContext("2d");
-    ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
-
-    // Convert to base64 JPEG (strip the data-URL prefix, backend adds it back)
-    const dataUrl = cameraCanvas.toDataURL("image/jpeg", 0.8);
-    const imageBase64 = dataUrl.split(",")[1];
-
-    const question = cameraQuestionInput.value.trim() || "What do you see in this image?";
-
-    const replyText = await ask
+    c
