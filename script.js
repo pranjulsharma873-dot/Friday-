@@ -179,6 +179,8 @@ profileButton.addEventListener("click", function () {
 // ============================
 
 micButton.addEventListener("click", function () {
+    unlockSpeechSynthesis();
+
     if (isListening) {
         stopListening();
     } else {
@@ -199,20 +201,34 @@ function speakText(text, onEnd) {
         return;
     }
 
-    // Cancel any ongoing speech before speaking the new message
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-IN";
-    utterance.rate = 1;
-    utterance.pitch = 1;
+    // Small delay: on some Android Chrome versions, calling speak()
+    // immediately after cancel() silently fails to produce audio.
+    setTimeout(function () {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "en-IN";
+        utterance.rate = 1;
+        utterance.pitch = 1;
 
-    if (onEnd) {
-        utterance.onend = onEnd;
-        utterance.onerror = onEnd;
+        if (onEnd) {
+            utterance.onend = onEnd;
+            utterance.onerror = onEnd;
+        }
+
+        window.speechSynthesis.speak(utterance);
+    }, 100);
+}
+
+function unlockSpeechSynthesis() {
+    if (!window.speechSynthesis) {
+        return;
     }
-
-    window.speechSynthesis.speak(utterance);
+    // Speaking a silent utterance directly inside a user tap "unlocks"
+    // TTS so later automatic (non-tap-triggered) speech is allowed.
+    const unlockUtterance = new SpeechSynthesisUtterance(" ");
+    unlockUtterance.volume = 0;
+    window.speechSynthesis.speak(unlockUtterance);
 }
 
 
@@ -446,6 +462,7 @@ function openVoiceMode() {
     voiceOrb.classList.remove("listening", "speaking");
     voiceModeStatus.textContent = "Starting...";
 
+    unlockSpeechSynthesis();
     startVoiceListening();
 }
 
