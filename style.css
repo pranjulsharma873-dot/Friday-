@@ -389,3 +389,87 @@ body {
     background: #ffffff;
     color: #000000;
 }
+
+/* ============ LIVE CAMERA (FULL SCREEN) ============ */
+
+.camera-mode {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000000;
+    z-index: 60;
+    flex-direction: column;
+}
+
+.camera-mode.active {
+    display: flex;
+}
+
+.camera-video {
+    flex: 1;
+    width: 100%;
+    object-fit: cover;
+    background: #000000;
+}
+
+.camera-top {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 61;
+}
+
+.camera-close {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+}
+
+.camera-status {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    text-align: center;
+    max-width: 80%;
+}
+
+.camera-bottom {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.camera-question-input {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 20px;
+    border: none;
+    font-size: 15px;
+    background: #ffffff;
+}
+
+.camera-capture-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 3px solid #ffffff;
+    background: #ff4444;
+    font-size: 22px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.camera-capture-btn:disabled {
+    opacity: 0.5;
+}
