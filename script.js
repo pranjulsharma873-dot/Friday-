@@ -1,4 +1,4 @@
-// ============================
+de// ============================
 // ELEMENT REFERENCES
 // ============================
 
@@ -644,4 +644,121 @@ async function openCamera() {
     await startCameraStream();
 }
 
-async function startC
+async function startCameraStream(deviceId) {
+    cameraStatus.textContent = "Requesting camera permission...";
+
+    // Stop any existing stream before starting a new one
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(function (track) {
+            track.stop();
+        });
+        cameraStream = null;
+    }
+
+    const constraints = deviceId
+        ? { video: { deviceId: { exact: deviceId } }, audio: false }
+        : { video: { facingMode: currentFacingMode }, audio: false };
+
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        cameraVideo.srcObject = cameraStream;
+        cameraStatus.textContent = "Point the camera and ask FRIDAY";
+
+        // Build/refresh the list of actual physical cameras now that
+        // we have permission (labels are only available after that)
+        await refreshVideoDevices();
+
+        // Sync currentDeviceIndex to whichever camera is actually active
+        const activeTrack = cameraStream.getVideoTracks()[0];
+        const activeSettings = activeTrack ? activeTrack.getSettings() : {};
+        if (activeSettings.deviceId) {
+            const idx = videoDevices.findIndex(function (d) {
+                return d.deviceId === activeSettings.deviceId;
+            });
+            if (idx !== -1) {
+                currentDeviceIndex = idx;
+            }
+        }
+
+    } catch (err) {
+        // Fall back to any available camera
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            cameraVideo.srcObject = cameraStream;
+            cameraStatus.textContent = "Point the camera and ask FRIDAY";
+            await refreshVideoDevices();
+        } catch (err2) {
+            cameraStatus.textContent = "Camera permission denied or unavailable.";
+        }
+    }
+}
+
+function flipCamera() {
+    if (videoDevices.length < 2) {
+        cameraStatus.textContent = "Only one camera found on this device.";
+        return;
+    }
+
+    currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
+    startCameraStream(videoDevices[currentDeviceIndex].deviceId);
+}
+
+function closeCamera() {
+    cameraMode.classList.remove("active");
+
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(function (track) {
+            track.stop();
+        });
+        cameraStream = null;
+    }
+
+    cameraVideo.srcObject = null;
+    cameraQuestionInput.value = "";
+}
+
+async function captureAndAsk() {
+    if (!cameraStream) {
+        return;
+    }
+
+    cameraCaptureButton.disabled = true;
+    cameraStatus.textContent = "Analyzing image...";
+
+    // Draw the current video frame onto the hidden canvas
+    cameraCanvas.width = cameraVideo.videoWidth;
+    cameraCanvas.height = cameraVideo.videoHeight;
+    const ctx = cameraCanvas.getContext("2d");
+    ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+    // Convert to base64 JPEG (strip the data-URL prefix, backend adds it back)
+    const dataUrl = cameraCanvas.toDataURL("image/jpeg", 0.8);
+    const imageBase64 = dataUrl.split(",")[1];
+
+    const question = cameraQuestionInput.value.trim() || "What do you see in this image?";
+
+    const replyText = await askFridayAboutImage(imageBase64, question);
+
+    cameraStatus.textContent = replyText;
+    cameraCaptureButton.disabled = false;
+    cameraQuestionInput.value = "";
+
+    // Log it in the main chat too
+    const userMessage = document.createElement("div");
+    userMessage.className = "user-message";
+    userMessage.textContent = "📷 " + question;
+    chatMessages.appendChild(userMessage);
+
+    const fridayMessage = document.createElement("div");
+    fridayMessage.className = "friday-message";
+    fridayMessage.textContent = replyText;
+    chatMessages.appendChild(fridayMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    speakText(replyText);
+}
+
+cameraButton.addEventListener("click", openCamera);
+cameraCloseButton.addEventListener("click", closeCamera);
+cameraFlipButton.addEventListener("click", flipCamera);
+cameraCaptureButton.addEventListener("click", captureAndAsk);
