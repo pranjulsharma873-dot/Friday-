@@ -635,4 +635,231 @@ async function handleVoiceModeMessage(transcript) {
     voiceModeStatus.textContent = "Thinking...";
 
     // Add to the main chat log too
-    c
+    const userMessage = document.createElement("div");
+    userMessage.className = "user-message";
+    userMessage.textContent = transcript;
+    chatMessages.appendChild(userMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    const replyText = await getFridayReply(transcript);
+
+    const fridayMessage = document.createElement("div");
+    fridayMessage.className = "friday-message";
+    fridayMessage.textContent = replyText;
+    chatMessages.appendChild(fridayMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    voiceOrb.classList.add("speaking");
+    voiceModeStatus.textContent = replyText;
+
+    speakText(replyText, function () {
+        voiceOrb.classList.remove("speaking");
+
+        if (voiceModeActive && !voiceMuted) {
+            startVoiceListening();
+        }
+    });
+}
+
+function openVoiceMode() {
+    voiceModeActive = true;
+    voiceMuted = false;
+    voiceModeMute.classList.remove("muted");
+    voiceMode.classList.add("active");
+    voiceOrb.classList.remove("listening", "speaking");
+    voiceModeStatus.textContent = "Starting...";
+
+    unlockSpeechSynthesis();
+    startVoiceListening();
+}
+
+function closeVoiceMode() {
+    voiceModeActive = false;
+
+    if (voiceRecognition) {
+        voiceRecognition.stop();
+    }
+
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+    }
+
+    voiceOrb.classList.remove("listening", "speaking");
+    voiceMode.classList.remove("active");
+}
+
+voiceModeButton.addEventListener("click", openVoiceMode);
+voiceModeClose.addEventListener("click", closeVoiceMode);
+voiceModeMinimize.addEventListener("click", closeVoiceMode);
+
+voiceModeMute.addEventListener("click", function () {
+    voiceMuted = !voiceMuted;
+    voiceModeMute.classList.toggle("muted", voiceMuted);
+
+    if (voiceMuted) {
+        if (voiceRecognition) {
+            voiceRecognition.stop();
+        }
+        voiceOrb.classList.remove("listening");
+        voiceModeStatus.textContent = "Microphone muted";
+    } else {
+        startVoiceListening();
+    }
+});
+
+
+// ============================
+// LIVE CAMERA
+// ============================
+
+let cameraStream = null;
+let currentFacingMode = "environment"; // used only for the very first camera open
+let videoDevices = [];
+let currentDeviceIndex = 0;
+
+async function refreshVideoDevices() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        videoDevices = devices.filter(function (d) {
+            return d.kind === "videoinput";
+        });
+    } catch (err) {
+        videoDevices = [];
+    }
+}
+
+async function openCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Camera not supported on this browser");
+        return;
+    }
+
+    unlockSpeechSynthesis();
+    cameraMode.classList.add("active");
+
+    // Start loading the detection model in the background (don't block camera opening)
+    loadDetectionModel().catch(function () {
+        // Errors are handled when capture is actually attempted
+    });
+
+    await startCameraStream();
+}
+
+async function startCameraStream(deviceId) {
+    cameraStatus.textContent = "Requesting camera permission...";
+
+    // Stop any existing stream before starting a new one
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(function (track) {
+            track.stop();
+        });
+        cameraStream = null;
+    }
+
+    const constraints = deviceId
+        ? { video: { deviceId: { exact: deviceId } }, audio: false }
+        : { video: { facingMode: currentFacingMode }, audio: false };
+
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        cameraVideo.srcObject = cameraStream;
+        cameraStatus.textContent = "Point the camera and ask FRIDAY";
+
+        // Build/refresh the list of actual physical cameras now that
+        // we have permission (labels are only available after that)
+        await refreshVideoDevices();
+
+        // Sync currentDeviceIndex to whichever camera is actually active
+        const activeTrack = cameraStream.getVideoTracks()[0];
+        const activeSettings = activeTrack ? activeTrack.getSettings() : {};
+        if (activeSettings.deviceId) {
+            const idx = videoDevices.findIndex(function (d) {
+                return d.deviceId === activeSettings.deviceId;
+            });
+            if (idx !== -1) {
+                currentDeviceIndex = idx;
+            }
+        }
+
+    } catch (err) {
+        // Fall back to any available camera
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            cameraVideo.srcObject = cameraStream;
+            cameraStatus.textContent = "Point the camera and ask FRIDAY";
+            await refreshVideoDevices();
+        } catch (err2) {
+            cameraStatus.textContent = "Camera permission denied or unavailable.";
+        }
+    }
+}
+
+function flipCamera() {
+    if (videoDevices.length < 2) {
+        cameraStatus.textContent = "Only one camera found on this device.";
+        return;
+    }
+
+    currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
+    startCameraStream(videoDevices[currentDeviceIndex].deviceId);
+}
+
+function closeCamera() {
+    cameraMode.classList.remove("active");
+
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(function (track) {
+            track.stop();
+        });
+        cameraStream = null;
+    }
+
+    cameraVideo.srcObject = null;
+    cameraQuestionInput.value = "";
+}
+
+async function captureAndAsk() {
+    if (!cameraStream) {
+        return;
+    }
+
+    cameraCaptureButton.disabled = true;
+    cameraStatus.textContent = "Analyzing image...";
+
+    // Draw the current video frame onto the hidden canvas
+    cameraCanvas.width = cameraVideo.videoWidth;
+    cameraCanvas.height = cameraVideo.videoHeight;
+    const ctx = cameraCanvas.getContext("2d");
+    ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+    // Convert to base64 JPEG (strip the data-URL prefix, backend adds it back)
+    const dataUrl = cameraCanvas.toDataURL("image/jpeg", 0.8);
+    const imageBase64 = dataUrl.split(",")[1];
+
+    const question = cameraQuestionInput.value.trim() || "What do you see in this image?";
+
+    const replyText = await askFridayAboutImage(imageBase64, question);
+
+    cameraStatus.textContent = replyText;
+    cameraCaptureButton.disabled = false;
+    cameraQuestionInput.value = "";
+
+    // Log it in the main chat too
+    const userMessage = document.createElement("div");
+    userMessage.className = "user-message";
+    userMessage.textContent = "📷 " + question;
+    chatMessages.appendChild(userMessage);
+
+    const fridayMessage = document.createElement("div");
+    fridayMessage.className = "friday-message";
+    fridayMessage.textContent = replyText;
+    chatMessages.appendChild(fridayMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    speakText(replyText);
+}
+
+cameraButton.addEventListener("click", openCamera);
+cameraCloseButton.addEventListener("click", closeCamera);
+cameraFlipButton.addEventListener("click", flipCamera);
+cameraCaptureButton.addEventListener("click", captureAndAsk);
