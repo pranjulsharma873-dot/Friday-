@@ -1,149 +1,79 @@
-// ============================================================
-// FRIDAY AI - COMPLETE SCRIPT.JS
-// ============================================================
-
-"use strict";
-
-// ============================================================
+// ============================
 // ELEMENT REFERENCES
-// ============================================================
+// ============================
 
-const $ = (id) => document.getElementById(id);
+const menuButton = document.getElementById("menuButton");
+const profileButton = document.getElementById("profileButton");
+const micButton = document.getElementById("micButton");
+const micStatus = document.getElementById("micStatus");
 
-const menuButton = $("menuButton");
-const profileButton = $("profileButton");
-const micButton = $("micButton");
-const micStatus = $("micStatus");
+const chatInput = document.getElementById("chatInput");
+const sendButton = document.getElementById("sendButton");
+const chatMessages = document.getElementById("chatMessages");
 
-const chatInput = $("chatInput");
-const sendButton = $("sendButton");
-const chatMessages = $("chatMessages");
+const chatButton = document.getElementById("chatButton");
+const pluginsButton = document.getElementById("pluginsButton");
+const historyButton = document.getElementById("historyButton");
+const settingsButton = document.getElementById("settingsButton");
 
-const chatButton = $("chatButton");
-const pluginsButton = $("pluginsButton");
-const historyButton = $("historyButton");
-const settingsButton = $("settingsButton");
+const overlay = document.getElementById("overlay");
+const sideMenu = document.getElementById("sideMenu");
+const closeMenuButton = document.getElementById("closeMenuButton");
 
-const overlay = $("overlay");
-const sideMenu = $("sideMenu");
-const closeMenuButton = $("closeMenuButton");
+const profileMenu = document.getElementById("profileMenu");
+const newChatButton = document.getElementById("newChatButton");
+const historyMenu = document.getElementById("historyMenu");
+const pluginsMenu = document.getElementById("pluginsMenu");
+const settingsMenu = document.getElementById("settingsMenu");
 
-const profileMenu = $("profileMenu");
-const newChatButton = $("newChatButton");
-const historyMenu = $("historyMenu");
-const pluginsMenu = $("pluginsMenu");
-const settingsMenu = $("settingsMenu");
+const modal = document.getElementById("modal");
+const modalTitle = document.getElementById("modalTitle");
+const modalText = document.getElementById("modalText");
+const modalClose = document.getElementById("modalClose");
 
-const modal = $("modal");
-const modalTitle = $("modalTitle");
-const modalText = $("modalText");
-const modalClose = $("modalClose");
+const voiceModeButton = document.getElementById("voiceModeButton");
+const voiceMode = document.getElementById("voiceMode");
+const voiceOrb = document.getElementById("voiceOrb");
+const voiceModeStatus = document.getElementById("voiceModeStatus");
+const voiceModeMute = document.getElementById("voiceModeMute");
+const voiceModeClose = document.getElementById("voiceModeClose");
+const voiceModeMinimize = document.getElementById("voiceModeMinimize");
 
-const voiceModeButton = $("voiceModeButton");
-const voiceMode = $("voiceMode");
-const voiceOrb = $("voiceOrb");
-const voiceModeStatus = $("voiceModeStatus");
-const voiceModeMute = $("voiceModeMute");
-const voiceModeClose = $("voiceModeClose");
-const voiceModeMinimize = $("voiceModeMinimize");
-
-const cameraButton = $("cameraButton");
-const cameraMode = $("cameraMode");
-const cameraVideo = $("cameraVideo");
-const cameraCanvas = $("cameraCanvas");
-const cameraStatus = $("cameraStatus");
-const cameraCloseButton = $("cameraCloseButton");
-const cameraFlipButton = $("cameraFlipButton");
-const cameraCaptureButton = $("cameraCaptureButton");
-const cameraQuestionInput = $("cameraQuestionInput");
-
-
-// ============================================================
-// CONFIGURATION
-// ============================================================
-
-// Agar Python Flask backend use karna hai:
-// Example:
-// const BACKEND_URL = "http://192.168.1.10:5000";
-
-// Filhaal empty rakha hai.
-// Empty hone par FRIDAY ka local brain chalega.
-const BACKEND_URL = "";
-
-
-// ============================================================
-// GLOBAL VARIABLES
-// ============================================================
+const cameraButton = document.getElementById("cameraButton");
+const cameraMode = document.getElementById("cameraMode");
+const cameraVideo = document.getElementById("cameraVideo");
+const cameraCanvas = document.getElementById("cameraCanvas");
+const cameraStatus = document.getElementById("cameraStatus");
+const cameraCloseButton = document.getElementById("cameraCloseButton");
+const cameraFlipButton = document.getElementById("cameraFlipButton");
+const cameraCaptureButton = document.getElementById("cameraCaptureButton");
+const cameraQuestionInput = document.getElementById("cameraQuestionInput");
 
 let isListening = false;
 let recognition = null;
 
-let voiceModeActive = false;
-let voiceMuted = false;
-let voiceRecognition = null;
-
-let cameraStream = null;
-let currentFacingMode = "environment";
-
-let objectDetectionModel = null;
-let modelLoadingPromise = null;
-
-
-// ============================================================
-// SPEECH RECOGNITION
-// ============================================================
-
-const SpeechRecognitionAPI =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (SpeechRecognitionAPI) {
-
     recognition = new SpeechRecognitionAPI();
-
     recognition.lang = "en-IN";
     recognition.continuous = false;
     recognition.interimResults = false;
 
     recognition.onresult = function (event) {
-
-        const transcript =
-            event.results[0][0].transcript.trim();
-
-        if (chatInput) {
-            chatInput.value = transcript;
-        }
-
+        const transcript = event.results[0][0].transcript;
+        chatInput.value = transcript;
         sendMessage();
     };
 
     recognition.onerror = function (event) {
-
-        console.log("Speech recognition error:", event.error);
-
-        if (event.error === "not-allowed" ||
-            event.error === "service-not-allowed") {
-
-            if (micStatus) {
-                micStatus.textContent =
-                    "Microphone permission denied.";
-            }
-
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            micStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
         } else if (event.error === "no-speech") {
-
-            if (micStatus) {
-                micStatus.textContent =
-                    "No speech detected.";
-            }
-
+            micStatus.textContent = "No speech detected. Try again.";
         } else {
-
-            if (micStatus) {
-                micStatus.textContent =
-                    "Mic error: " + event.error;
-            }
+            micStatus.textContent = "Mic error: " + event.error;
         }
-
         stopListening();
     };
 
@@ -152,848 +82,557 @@ if (SpeechRecognitionAPI) {
     };
 }
 
-
-// ============================================================
-// START LISTENING
-// ============================================================
-
-async function startListening() {
-
+function startListening() {
     if (!recognition) {
-
-        if (micStatus) {
-            micStatus.textContent =
-                "Speech recognition is not supported.";
-        }
-
+        micStatus.textContent = "Speech recognition not supported on this browser";
         return;
     }
 
-    if (!navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia) {
-
-        if (micStatus) {
-            micStatus.textContent =
-                "Microphone access is not supported.";
-        }
-
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        micStatus.textContent = "Mic access not supported on this browser";
         return;
     }
 
-    try {
+    micStatus.textContent = "Requesting mic permission...";
 
-        if (micStatus) {
-            micStatus.textContent =
-                "Requesting microphone permission...";
-        }
-
-        const stream =
-            await navigator.mediaDevices.getUserMedia({
-                audio: true
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function (stream) {
+            // Stop the stream immediately, we only needed it to trigger/check permission
+            stream.getTracks().forEach(function (track) {
+                track.stop();
             });
 
-        stream.getTracks().forEach(track => {
-            track.stop();
+            try {
+                isListening = true;
+                micButton.classList.add("active");
+                micStatus.textContent = "Listening...";
+                recognition.start();
+            } catch (err) {
+                micStatus.textContent = "Could not start mic: " + err.message;
+                stopListening();
+            }
+        })
+        .catch(function (err) {
+            if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                micStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
+            } else if (err.name === "NotFoundError") {
+                micStatus.textContent = "No microphone found on this device.";
+            } else {
+                micStatus.textContent = "Mic error: " + err.name;
+            }
+            stopListening();
         });
-
-        isListening = true;
-
-        if (micButton) {
-            micButton.classList.add("active");
-        }
-
-        if (micStatus) {
-            micStatus.textContent = "Listening...";
-        }
-
-        recognition.start();
-
-    } catch (error) {
-
-        console.log(error);
-
-        if (error.name === "NotAllowedError") {
-
-            if (micStatus) {
-                micStatus.textContent =
-                    "Microphone permission denied.";
-            }
-
-        } else if (error.name === "NotFoundError") {
-
-            if (micStatus) {
-                micStatus.textContent =
-                    "No microphone found.";
-            }
-
-        } else {
-
-            if (micStatus) {
-                micStatus.textContent =
-                    "Microphone error.";
-            }
-        }
-
-        stopListening();
-    }
 }
-
-
-// ============================================================
-// STOP LISTENING
-// ============================================================
 
 function stopListening() {
-
     isListening = false;
-
-    if (micButton) {
-        micButton.classList.remove("active");
-    }
-
-    if (micStatus) {
-        micStatus.textContent =
-            "Tap microphone to talk";
-    }
-
+    micButton.classList.remove("active");
+    micStatus.textContent = "Tap microphone to talk";
     if (recognition) {
-
-        try {
-            recognition.stop();
-        } catch (error) {
-            // Already stopped
-        }
+        recognition.stop();
     }
 }
 
 
-// ============================================================
-// MICROPHONE BUTTON
-// ============================================================
+// ============================
+// SIDE MENU
+// ============================
 
-if (micButton) {
-
-    micButton.addEventListener("click", function () {
-
-        unlockSpeechSynthesis();
-
-        if (isListening) {
-            stopListening();
-        } else {
-            startListening();
-        }
-
-    });
+function openMenu() {
+    sideMenu.classList.add("active");
+    overlay.classList.add("active");
 }
 
+function closeMenu() {
+    sideMenu.classList.remove("active");
+    overlay.classList.remove("active");
+}
 
-// ============================================================
+menuButton.addEventListener("click", openMenu);
+closeMenuButton.addEventListener("click", closeMenu);
+overlay.addEventListener("click", function () {
+    closeMenu();
+    closeModal();
+});
+
+
+// ============================
+// MODAL
+// ============================
+
+function openModal(title, text) {
+    modalTitle.textContent = title;
+    modalText.textContent = text;
+    modal.classList.add("active");
+    overlay.classList.add("active");
+}
+
+function closeModal() {
+    modal.classList.remove("active");
+    overlay.classList.remove("active");
+}
+
+modalClose.addEventListener("click", closeModal);
+
+
+// ============================
+// PROFILE / TOP BAR
+// ============================
+
+profileButton.addEventListener("click", function () {
+    openModal("Profile", "Your profile details will appear here.");
+});
+
+
+// ============================
+// MICROPHONE
+// ============================
+
+micButton.addEventListener("click", function () {
+    unlockSpeechSynthesis();
+
+    if (isListening) {
+        stopListening();
+    } else {
+        startListening();
+    }
+});
+
+
+// ============================
 // TEXT TO SPEECH
-// ============================================================
+// ============================
 
 function speakText(text, onEnd) {
-
     if (!window.speechSynthesis) {
-
         if (onEnd) {
             onEnd();
         }
-
         return;
     }
 
     window.speechSynthesis.cancel();
 
+    // Small delay: on some Android Chrome versions, calling speak()
+    // immediately after cancel() silently fails to produce audio.
     setTimeout(function () {
-
-        const utterance =
-            new SpeechSynthesisUtterance(text);
-
+        const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = "en-IN";
         utterance.rate = 1;
         utterance.pitch = 1;
-        utterance.volume = 1;
 
         if (onEnd) {
-
             utterance.onend = onEnd;
             utterance.onerror = onEnd;
         }
 
         window.speechSynthesis.speak(utterance);
-
     }, 100);
 }
 
-
-// ============================================================
-// UNLOCK SPEECH SYNTHESIS ON ANDROID
-// ============================================================
-
 function unlockSpeechSynthesis() {
-
     if (!window.speechSynthesis) {
         return;
     }
-
-    try {
-
-        const utterance =
-            new SpeechSynthesisUtterance(" ");
-
-        utterance.volume = 0;
-
-        window.speechSynthesis.speak(
-            utterance
-        );
-
-    } catch (error) {
-        console.log(error);
-    }
+    // Speaking a silent utterance directly inside a user tap "unlocks"
+    // TTS so later automatic (non-tap-triggered) speech is allowed.
+    const unlockUtterance = new SpeechSynthesisUtterance(" ");
+    unlockUtterance.volume = 0;
+    window.speechSynthesis.speak(unlockUtterance);
 }
 
 
-// ============================================================
-// SIDE MENU
-// ============================================================
+// ============================
+// LOCAL OBJECT-DETECTION MODEL
+// (runs fully in the browser via TensorFlow.js — no key, no server)
+// ============================
 
-function openMenu() {
+let objectDetectionModel = null;
+let modelLoadingPromise = null;
 
-    if (sideMenu) {
-        sideMenu.classList.add("active");
+function loadDetectionModel() {
+    if (objectDetectionModel) {
+        return Promise.resolve(objectDetectionModel);
     }
-
-    if (overlay) {
-        overlay.classList.add("active");
+    if (!modelLoadingPromise) {
+        modelLoadingPromise = cocoSsd.load().then(function (model) {
+            objectDetectionModel = model;
+            return model;
+        });
     }
+    return modelLoadingPromise;
 }
 
 
-function closeMenu() {
+// ============================
+// FRIDAY'S BRAIN (fully self-made, runs in the browser — no API, no key)
+// ============================
 
-    if (sideMenu) {
-        sideMenu.classList.remove("active");
-    }
+const userName = null; // could be set later if you add a "remember my name" feature
 
-    if (overlay) {
-        overlay.classList.remove("active");
-    }
+function getRandomFrom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
-
-if (menuButton) {
-    menuButton.addEventListener(
-        "click",
-        openMenu
-    );
-}
-
-
-if (closeMenuButton) {
-    closeMenuButton.addEventListener(
-        "click",
-        closeMenu
-    );
-}
-
-
-// ============================================================
-// MODAL
-// ============================================================
-
-function openModal(title, text) {
-
-    if (modalTitle) {
-        modalTitle.textContent = title;
-    }
-
-    if (modalText) {
-        modalText.textContent = text;
-    }
-
-    if (modal) {
-        modal.classList.add("active");
-    }
-
-    if (overlay) {
-        overlay.classList.add("active");
-    }
-}
-
-
-function closeModal() {
-
-    if (modal) {
-        modal.classList.remove("active");
-    }
-
-    if (overlay) {
-        overlay.classList.remove("active");
-    }
-}
-
-
-if (modalClose) {
-
-    modalClose.addEventListener(
-        "click",
-        closeModal
-    );
-}
-
-
-if (overlay) {
-
-    overlay.addEventListener(
-        "click",
-        function () {
-
-            closeMenu();
-            closeModal();
-
-        }
-    );
-}
-
-
-// ============================================================
-// PROFILE
-// ============================================================
-
-if (profileButton) {
-
-    profileButton.addEventListener(
-        "click",
-        function () {
-
-            openModal(
-                "FRIDAY Profile",
-                "FRIDAY AI - Your personal AI assistant."
-            );
-
-        }
-    );
-}
-
-
-// ============================================================
-// LOCAL FRIDAY BRAIN
-// ============================================================
-
-function randomItem(array) {
-
-    return array[
-        Math.floor(
-            Math.random() * array.length
-        )
-    ];
-}
-
-
-function calculateMath(message) {
-
-    let text = message
+function tryMath(message) {
+    // Matches things like "5 + 3", "what is 12 * 4", "10 divided by 2"
+    const cleaned = message
         .toLowerCase()
-        .replace(/what is/g, "")
-        .replace(/what's/g, "")
-        .replace(/calculate/g, "")
-        .replace(/solve/g, "")
         .replace(/plus/g, "+")
         .replace(/minus/g, "-")
-        .replace(/times/g, "*")
-        .replace(/multiplied by/g, "*")
+        .replace(/times|multiplied by/g, "*")
         .replace(/divided by/g, "/")
+        .replace(/what is|what's|calculate|solve/g, "")
         .trim();
 
-    const match = text.match(
-        /(-?\d+(?:\.\d+)?)\s*([\+\-\*\/])\s*(-?\d+(?:\.\d+)?)/
-    );
+    const mathMatch = cleaned.match(/(-?\d+(\.\d+)?)\s*([\+\-\*\/])\s*(-?\d+(\.\d+)?)/);
 
-    if (!match) {
+    if (!mathMatch) {
         return null;
     }
 
-    const a = parseFloat(match[1]);
-    const operator = match[2];
-    const b = parseFloat(match[3]);
-
+    const a = parseFloat(mathMatch[1]);
+    const op = mathMatch[3];
+    const b = parseFloat(mathMatch[4]);
     let result;
 
-    switch (operator) {
+    if (op === "+") result = a + b;
+    else if (op === "-") result = a - b;
+    else if (op === "*") result = a * b;
+    else if (op === "/") result = b !== 0 ? a / b : null;
 
-        case "+":
-            result = a + b;
-            break;
-
-        case "-":
-            result = a - b;
-            break;
-
-        case "*":
-            result = a * b;
-            break;
-
-        case "/":
-
-            if (b === 0) {
-                return "You cannot divide by zero.";
-            }
-
-            result = a / b;
-            break;
-
-        default:
-            return null;
+    if (result === null) {
+        return "You can't divide by zero!";
     }
 
-    return `${a} ${operator} ${b} = ${result}`;
+    return a + " " + op + " " + b + " = " + result;
 }
 
+function getFridayReplySync(message) {
+    const text = message.toLowerCase().trim();
 
-// ============================================================
-// FRIDAY LOCAL RESPONSE
-// ============================================================
-
-function getLocalFridayReply(message) {
-
-    const text =
-        message.toLowerCase().trim();
-
-
-    // -------------------------
-    // GREETING
-    // -------------------------
-
-    if (
-        /^(hi|hii+|hello+|hey+|namaste|yo)\b/
-            .test(text)
-    ) {
-
-        return randomItem([
-            "Hello! How can I help you?",
-            "Hi! I'm FRIDAY. What can I do for you?",
+    // --- Greetings ---
+    if (/^(hi|hii+|hello+|hey+|namaste|yo)\b/.test(text)) {
+        return getRandomFrom([
+            "Hello! How can I help you today?",
+            "Hi there! What can I do for you?",
             "Hey! I'm listening."
         ]);
     }
 
-
-    // -------------------------
-    // HOW ARE YOU
-    // -------------------------
-
-    if (
-        text.includes("how are you")
-    ) {
-
-        return "I'm running smoothly. How are you?";
+    // --- How are you ---
+    if (text.includes("how are you")) {
+        return "I'm running smoothly, thanks for asking! How are you doing?";
     }
 
-
-    // -------------------------
-    // NAME
-    // -------------------------
-
-    if (
-        text.includes("your name") ||
-        text.includes("who are you")
-    ) {
-
+    // --- Identity ---
+    if (text.includes("your name")) {
         return "I'm FRIDAY, your personal AI assistant.";
     }
 
-
-    // -------------------------
-    // CREATOR
-    // -------------------------
-
-    if (
-        text.includes("who made you") ||
-        text.includes("who created you") ||
-        text.includes("who built you")
-    ) {
-
-        return "I'm your custom-made FRIDAY AI assistant.";
+    if (text.includes("who made you") || text.includes("who created you") || text.includes("who built you")) {
+        return "I was built and coded by you — my own custom-made assistant!";
     }
 
-
-    // -------------------------
-    // TIME
-    // -------------------------
-
-    if (
-        text.includes("what time") ||
-        text === "time" ||
-        text.includes("current time")
-    ) {
-
+    // --- Time / Date ---
+    if (text.includes("time") && !text.includes("sometime")) {
         const now = new Date();
-
-        return "The current time is " +
-            now.toLocaleTimeString();
+        return "It's currently " + now.toLocaleTimeString();
     }
 
-
-    // -------------------------
-    // DATE
-    // -------------------------
-
-    if (
-        text.includes("today's date") ||
-        text.includes("today date") ||
-        text === "date" ||
-        text.includes("what date")
-    ) {
-
+    if (text.includes("date") || text.includes("today")) {
         const now = new Date();
-
-        return "Today is " +
-            now.toLocaleDateString(
-                undefined,
-                {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric"
-                }
-            );
+        return "Today's date is " + now.toLocaleDateString(undefined, {
+            weekday: "long", year: "numeric", month: "long", day: "numeric"
+        });
     }
 
-
-    // -------------------------
-    // MATH
-    // -------------------------
-
-    const mathAnswer =
-        calculateMath(message);
-
-    if (mathAnswer) {
-        return mathAnswer;
+    // --- Math ---
+    const mathResult = tryMath(text);
+    if (mathResult) {
+        return mathResult;
     }
 
-
-    // -------------------------
-    // JOKE
-    // -------------------------
-
+    // --- Jokes ---
     if (text.includes("joke")) {
-
-        return randomItem([
-
-            "Why did the computer go to the doctor? Because it caught a virus.",
-
-            "Why do programmers prefer dark mode? Because light attracts bugs.",
-
-            "Why don't robots panic? Because they have great byte control.",
-
-            "I would tell you a UDP joke, but you might not get it."
+        return getRandomFrom([
+            "Why don't robots ever panic? Because they have great byte control!",
+            "Why did the computer go to the doctor? It caught a virus!",
+            "I would tell you a UDP joke, but you might not get it.",
+            "Why do programmers prefer dark mode? Because light attracts bugs!"
         ]);
     }
 
-
-    // -------------------------
-    // THANKS
-    // -------------------------
-
-    if (
-        text.includes("thank you") ||
-        text.includes("thanks")
-    ) {
-
-        return randomItem([
-            "You're welcome!",
-            "Anytime!",
-            "Happy to help!"
-        ]);
+    // --- Thanks ---
+    if (text.includes("thank")) {
+        return getRandomFrom(["You're welcome!", "Anytime!", "Happy to help!"]);
     }
 
-
-    // -------------------------
-    // GOODBYE
-    // -------------------------
-
-    if (
-        /\b(bye|goodbye|see you|good night)\b/
-            .test(text)
-    ) {
-
-        return randomItem([
-            "Goodbye!",
-            "See you later!",
-            "Take care!"
-        ]);
+    // --- Bye ---
+    if (/\b(bye|goodbye|see you|good night)\b/.test(text)) {
+        return getRandomFrom(["Goodbye! Talk to you soon.", "See you later!", "Take care!"]);
     }
 
-
-    // -------------------------
-    // CAPABILITIES
-    // -------------------------
-
-    if (
-        text.includes("what can you do") ||
-        text.includes("your capabilities")
-    ) {
-
-        return "I can chat with you, use voice recognition, speak replies, perform calculations, use the camera, and detect objects in images.";
+    // --- Capabilities ---
+    if (text.includes("what can you do") || text.includes("help me")) {
+        return "I can chat with you, tell the time and date, do quick math, tell jokes, and even look through the camera to describe what it sees!";
     }
 
-
-    // -------------------------
-    // HELP
-    // -------------------------
-
-    if (text === "help") {
-
-        return "You can ask me questions, use the microphone, open voice mode, or use the camera.";
-    }
-
-
-    // -------------------------
-    // FALLBACK
-    // -------------------------
-
-    return randomItem([
-
-        "I'm still learning. Tell me a little more.",
-
-        "Interesting. Can you explain that to me?",
-
-        "I understand your message, but I don't have a complete answer for that yet."
-
+    // --- Fallback ---
+    return getRandomFrom([
+        "I heard you say: \"" + message + "\" — I'm still learning, so I might not fully understand that yet.",
+        "Interesting! Tell me more about that.",
+        "I'm not sure how to respond to that yet, but I'm listening."
     ]);
 }
 
-
-// ============================================================
-// BACKEND CHAT
-// ============================================================
-
-async function askBackend(message) {
-
-    if (!BACKEND_URL) {
-        return null;
-    }
-
-    try {
-
-        const response =
-            await fetch(
-                BACKEND_URL + "/chat",
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-                        message: message,
-                        session_id:
-                            getSessionId()
-                    })
-                }
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Backend HTTP " +
-                response.status
-            );
-        }
-
-
-        const data =
-            await response.json();
-
-
-        if (data.reply) {
-            return data.reply;
-        }
-
-
-        return null;
-
-    } catch (error) {
-
-        console.error(
-            "Backend error:",
-            error
-        );
-
-        return null;
-    }
-}
-
-
-// ============================================================
-// GET FRIDAY REPLY
-// ============================================================
-
+// Kept async so the rest of the app (which awaits this function) doesn't
+// need to change — but it now resolves instantly with no network call.
 async function getFridayReply(message) {
+    return getFridayReplySync(message);
+}
 
-    // First try backend if configured
-    if (BACKEND_URL) {
-
-        const backendReply =
-            await askBackend(message);
-
-        if (backendReply) {
-            return backendReply;
+async function askFridayAboutImage(imageBase64, question) {
+    try {
+        if (typeof cocoSsd === "undefined") {
+            return "The object-detection model didn't load. Check your internet connection and reload the page.";
         }
-    }
 
-    // Otherwise local brain
-    return getLocalFridayReply(message);
+        const model = await loadDetectionModel();
+
+        // Build an image element from the captured photo
+        const img = new Image();
+        await new Promise(function (resolve, reject) {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = "data:image/jpeg;base64," + imageBase64;
+        });
+
+        const predictions = await model.detect(img);
+
+        if (predictions.length === 0) {
+            return "I couldn't clearly identify anything in that image. Try moving closer or improving the lighting.";
+        }
+
+        // Keep only reasonably confident predictions
+        const confident = predictions
+            .filter(function (p) { return p.score > 0.5; })
+            .sort(function (a, b) { return b.score - a.score; });
+
+        const itemsToReport = confident.length > 0 ? confident : predictions;
+        const names = itemsToReport.slice(0, 5).map(function (p) { return p.class; });
+
+        // Count duplicates (e.g. two "person" -> "2 persons")
+        const counts = {};
+        names.forEach(function (name) {
+            counts[name] = (counts[name] || 0) + 1;
+        });
+
+        const parts = Object.keys(counts).map(function (name) {
+            const count = counts[name];
+            return count > 1 ? (count + " " + name + "s") : ("a " + name);
+        });
+
+        let description;
+        if (parts.length === 1) {
+            description = "I can see " + parts[0] + ".";
+        } else {
+            description = "I can see " + parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] + ".";
+        }
+
+        // Object detection can't read text — flag that limitation if relevant
+        if (/read|text|written|says?\b/i.test(question)) {
+            description = "I can't read text yet, but here's what I can identify: " + description;
+        }
+
+        return description;
+
+    } catch (err) {
+        return "Sorry, I had trouble analyzing that image. (" + err.message + ")";
+    }
 }
 
 
-// ============================================================
-// SESSION ID
-// ============================================================
-
-function getSessionId() {
-
-    let id =
-        localStorage.getItem(
-            "friday_session_id"
-        );
-
-    if (!id) {
-
-        id =
-            "friday-" +
-            Date.now() +
-            "-" +
-            Math.random()
-                .toString(36)
-                .substring(2, 10);
-
-        localStorage.setItem(
-            "friday_session_id",
-            id
-        );
-    }
-
-    return id;
-}
-
-
-// ============================================================
-// ADD MESSAGE TO CHAT
-// ============================================================
-
-function addChatMessage(
-    text,
-    type
-) {
-
-    if (!chatMessages) {
-        return null;
-    }
-
-    const message =
-        document.createElement("div");
-
-    message.className =
-        type === "user"
-            ? "user-message"
-            : "friday-message";
-
-    message.textContent = text;
-
-    chatMessages.appendChild(
-        message
-    );
-
-    chatMessages.scrollTop =
-        chatMessages.scrollHeight;
-
-    return message;
-}
-
-
-// ============================================================
-// SEND MESSAGE
-// ============================================================
+// ============================
+// CHAT INPUT
+// ============================
 
 async function sendMessage() {
 
-    if (!chatInput) {
+    const message = chatInput.value.trim();
+
+    if (message === "") {
         return;
     }
-
-    const message =
-        chatInput.value.trim();
-
-    if (!message) {
-        return;
-    }
-
 
     // User message
-    addChatMessage(
-        message,
-        "user"
-    );
-
+    const userMessage = document.createElement("div");
+    userMessage.className = "user-message";
+    userMessage.textContent = message;
+    chatMessages.appendChild(userMessage);
 
     // Clear input
     chatInput.value = "";
 
+    // "Typing..." placeholder while we wait for the real AI reply
+    const typingMessage = document.createElement("div");
+    typingMessage.className = "friday-message";
+    typingMessage.textContent = "FRIDAY is typing...";
+    chatMessages.appendChild(typingMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    // Typing indicator
-    const typing =
-        addChatMessage(
-            "FRIDAY is thinking...",
-            "friday"
-        );
+    const replyText = await getFridayReply(message);
 
+    typingMessage.textContent = replyText;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    try {
+    speakText(replyText);
+}
 
-        const reply =
-            await getFridayReply(
-                message
-            );
-
-
-        if (typing) {
-            typing.textContent =
-                reply;
-        }
-
-
-        speakText(reply);
-
-
-    } catch (error) {
-
-        console.error(error);
-
-        if (typing) {
-
-            typing.textContent =
-                "Sorry, something went wrong.";
-        }
+function handleEnter(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        sendMessage();
     }
 }
 
+sendButton.addEventListener("click", sendMessage);
+chatInput.addEventListener("keypress", handleEnter);
 
-// ============================================================
-// SEND BUTTON
-// ============================================================
 
-if (sendButton) {
+// ============================
+// BOTTOM MENU
+// ============================
 
-    sendButton.addEventListener(
-        "click",
-        sendMessage
-    );
+chatButton.addEventListener("click", function () {
+    closeMenu();
+    chatInput.focus();
+});
+
+pluginsButton.addEventListener("click", function () {
+    openModal("Plugins", "No plugins installed yet.");
+});
+
+historyButton.addEventListener("click", function () {
+    openModal("Chat History", "Your previous chats will appear here.");
+});
+
+settingsButton.addEventListener("click", function () {
+    openModal("Settings", "Settings panel coming soon.");
+});
+
+
+// ============================
+// SIDE MENU ITEMS
+// ============================
+
+profileMenu.addEventListener("click", function () {
+    closeMenu();
+    openModal("Profile", "Your profile details will appear here.");
+});
+
+newChatButton.addEventListener("click", function () {
+    chatMessages.innerHTML = "";
+    closeMenu();
+});
+
+historyMenu.addEventListener("click", function () {
+    closeMenu();
+    openModal("Chat History", "Your previous chats will appear here.");
+});
+
+pluginsMenu.addEventListener("click", function () {
+    closeMenu();
+    openModal("Plugins", "No plugins installed yet.");
+});
+
+settingsMenu.addEventListener("click", function () {
+    closeMenu();
+    openModal("Settings", "Settings panel coming soon.");
+});
+
+
+// ============================
+// VOICE MODE (FULL SCREEN)
+// ============================
+
+let voiceModeActive = false;
+let voiceMuted = false;
+let voiceRecognition = null;
+
+if (SpeechRecognitionAPI) {
+    voiceRecognition = new SpeechRecognitionAPI();
+    voiceRecognition.lang = "en-IN";
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = false;
+
+    voiceRecognition.onresult = function (event) {
+        const transcript = event.results[0][0].transcript;
+        handleVoiceModeMessage(transcript);
+    };
+
+    voiceRecognition.onerror = function (event) {
+        if (!voiceModeActive) {
+            return;
+        }
+
+        if (event.error === "no-speech") {
+            // Silence timeout — just listen again
+            if (!voiceMuted) {
+                startVoiceListening();
+            }
+            return;
+        }
+
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            voiceModeStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
+        } else {
+            voiceModeStatus.textContent = "Mic error: " + event.error;
+        }
+
+        voiceOrb.classList.remove("listening");
+    };
 }
 
+function startVoiceListening() {
+    if (!voiceRecognition) {
+        voiceModeStatus.textContent = "Speech recognition not supported on this browser";
+        return;
+    }
 
-// ============================================================
-// ENTER KEY
-// ============================================
+    voiceModeStatus.textContent = "Requesting mic permission...";
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function (stream) {
+            stream.getTracks().forEach(function (track) {
+                track.stop();
+            });
+
+            try {
+                voiceOrb.classList.remove("speaking");
+                voiceOrb.classList.add("listening");
+                voiceModeStatus.textContent = "Listening...";
+                voiceRecognition.start();
+            } catch (err) {
+                // Recognition may already be running — ignore duplicate start errors
+            }
+        })
+        .catch(function (err) {
+            if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                voiceModeStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
+            } else if (err.name === "NotFoundError") {
+                voiceModeStatus.textContent = "No microphone found on this device.";
+            } else {
+                voiceModeStatus.textContent = "Mic error: " + err.name;
+            }
+            voiceOrb.classList.remove("listening");
+        });
+}
+
+async function handleVoiceModeMessage(transcript) {
+
+    voiceOrb.classList.remove("listening");
+    voiceModeStatus.textContent = "Thinking...";
+
+    // Add to the main chat log too
+    c
