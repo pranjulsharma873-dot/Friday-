@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FRIDAY test</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 16px; font-size: 16px; line-height: 1.5; }
+  .ok { color: #0a7a2f; font-weight: bold; }
+  .bad { color: #c00; font-weight: bold; }
+  button { padding: 12px 18px; font-size: 16px; margin: 6px 0; }
+  pre { background: #f2f2f2; padding: 8px; white-space: pre-wrap; word-break: break-all; }
+</style>
+</head>
+<body>
+<h2>FRIDAY test page</h2>
+<div id="out">Checking...</div>
+<button id="t">Tap me</button>
+<div id="tapResult"></div>
+
+<script>
+var out = document.getElementById("out");
+function line(ok, text) {
+  out.innerHTML += '<div class="' + (ok ? 'ok' : 'bad') + '">' + (ok ? '✅ ' : '❌ ') + text + '</div>';
+}
+out.innerHTML = "";
+line(true, "1. Inline JS chal raha hai");
+
+document.getElementById("t").onclick = function () {
+  document.getElementById("tapResult").innerHTML = '<div class="ok">✅ 2. Button click kaam kar raha hai</div>';
+};
+
+function check(path, label, mustHave) {
+  fetch(path + "?nocache=" + Date.now())
+    .then(function (r) {
+      if (!r.ok) { line(false, label + ": HTTP " + r.status + " (file nahi mili)"); return null; }
+      return r.text();
+    })
+    .then(function (t) {
+      if (t === null) return;
+      var lines = t.split("\n").length;
+      var first = t.split("\n")[0].slice(0, 80);
+      var found = mustHave ? t.indexOf(mustHave) !== -1 : true;
+      line(found, label + ": mili, " + lines + " lines. " + (mustHave ? (found ? "Naya version hai" : "PURANA version hai") : ""));
+      out.innerHTML += "<pre>" + first.replace(/</g, "&lt;") + "</pre>";
+    })
+    .catch(function (e) { line(false, label + ": error " + e); });
+}
+
+check("script.js", "script.js", "startListening");
+check("index.html", "index.html", "plusButton");
+check("style.css", "style.css", "plus-menu");
+line(true, "URL: " + location.href);
+</script>
+</body>
+</html>
