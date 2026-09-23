@@ -1,764 +1,190 @@
-// ============================
-// ELEMENT REFERENCES
-// ============================
+const $ = (id) => document.getElementById(id);
 
-const menuButton = document.getElementById("menuButton");
-const profileButton = document.getElementById("profileButton");
-const chatInput = document.getElementById("chatInput");
-const sendButton = document.getElementById("sendButton");
-const chatMessages = document.getElementById("chatMessages");
+const chatMessages = $("chatMessages");
+const chatInput = $("chatInput");
+const overlay = $("overlay");
+const sideMenu = $("sideMenu");
+const modal = $("modal");
+const plusMenu = $("plusMenu");
 
-const chatButton = document.getElementById("chatButton");
-const pluginsButton = document.getElementById("pluginsButton");
-const historyButton = document.getElementById("historyButton");
-const settingsButton = document.getElementById("settingsButton");
+/* ---------- SIDE MENU (☰) ---------- */
+function openMenu() { sideMenu.classList.add("open"); overlay.classList.add("open"); }
+function closeMenu() { sideMenu.classList.remove("open"); overlay.classList.remove("open"); }
+$("menuButton").onclick = openMenu;
+$("closeMenuButton").onclick = closeMenu;
+overlay.onclick = () => { closeMenu(); modal.classList.remove("open"); };
 
-const overlay = document.getElementById("overlay");
-const sideMenu = document.getElementById("sideMenu");
-const closeMenuButton = document.getElementById("closeMenuButton");
+function showModal(title, text) {
+    $("modalTitle").textContent = title;
+    $("modalText").textContent = text;
+    modal.classList.add("open");
+    overlay.classList.add("open");
+}
+$("modalClose").onclick = () => { modal.classList.remove("open"); overlay.classList.remove("open"); };
 
-const profileMenu = document.getElementById("profileMenu");
-const newChatButton = document.getElementById("newChatButton");
-const historyMenu = document.getElementById("historyMenu");
-const pluginsMenu = document.getElementById("pluginsMenu");
-const settingsMenu = document.getElementById("settingsMenu");
+$("profileMenu").onclick = () => { closeMenu(); showModal("Profile", "Profile coming soon."); };
+$("historyMenu").onclick = () => { closeMenu(); showModal("Chat History", "History coming soon."); };
+$("pluginsMenu").onclick = () => { closeMenu(); showModal("Plugins", "Plugins coming soon."); };
+$("settingsMenu").onclick = () => { closeMenu(); showModal("Settings", "Settings coming soon."); };
+$("newChatButton").onclick = () => { chatMessages.innerHTML = ""; closeMenu(); };
 
-const modal = document.getElementById("modal");
-const modalTitle = document.getElementById("modalTitle");
-const modalText = document.getElementById("modalText");
-const modalClose = document.getElementById("modalClose");
-
-const voiceModeButton = document.getElementById("voiceModeButton");
-const voiceMode = document.getElementById("voiceMode");
-const voiceOrb = document.getElementById("voiceOrb");
-const voiceModeStatus = document.getElementById("voiceModeStatus");
-const voiceModeMute = document.getElementById("voiceModeMute");
-const voiceModeClose = document.getElementById("voiceModeClose");
-const voiceModeMinimize = document.getElementById("voiceModeMinimize");
-
-const cameraButton = document.getElementById("cameraButton");
-const cameraMode = document.getElementById("cameraMode");
-const cameraVideo = document.getElementById("cameraVideo");
-const cameraCanvas = document.getElementById("cameraCanvas");
-const cameraStatus = document.getElementById("cameraStatus");
-const cameraCloseButton = document.getElementById("cameraCloseButton");
-const cameraFlipButton = document.getElementById("cameraFlipButton");
-const cameraCaptureButton = document.getElementById("cameraCaptureButton");
-const cameraQuestionInput = document.getElementById("cameraQuestionInput");
-
-// ============================
-// SIDE MENU
-// ============================
-
-const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-function openMenu() {
-    sideMenu.classList.add("active");
-    overlay.classList.add("active");
+/* ---------- CHAT ---------- */
+function addMessage(text, who, imgSrc) {
+    const div = document.createElement("div");
+    div.className = "msg " + who;
+    if (imgSrc) {
+        const img = document.createElement("img");
+        img.src = imgSrc;
+        div.appendChild(img);
+    }
+    if (text) {
+        const p = document.createElement("div");
+        p.textContent = text;
+        div.appendChild(p);
+    }
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function closeMenu() {
-    sideMenu.classList.remove("active");
-    overlay.classList.remove("active");
+// >>> Yahan apna purana AI / API wala code lagao <<<
+async function getReply(text) {
+    return "Aapne kaha: " + text;
 }
 
-menuButton.addEventListener("click", openMenu);
-closeMenuButton.addEventListener("click", closeMenu);
-overlay.addEventListener("click", function () {
-    closeMenu();
-    closeModal();
-});
-
-
-// ============================
-// MODAL
-// ============================
-
-function openModal(title, text) {
-    modalTitle.textContent = title;
-    modalText.textContent = text;
-    modal.classList.add("active");
-    overlay.classList.add("active");
+async function sendText(text) {
+    addMessage(text, "user");
+    const reply = await getReply(text);
+    addMessage(reply, "ai");
+    return reply;
 }
 
-function closeModal() {
-    modal.classList.remove("active");
-    overlay.classList.remove("active");
-}
-
-modalClose.addEventListener("click", closeModal);
-
-
-// ============================
-// PROFILE / TOP BAR
-// ============================
-
-profileButton.addEventListener("click", function () {
-    openModal("Profile", "Your profile details will appear here.");
-});
-
-
-// ============================
-// TEXT TO SPEECH
-// ============================
-
-function speakText(text, onEnd) {
-    if (!window.speechSynthesis) {
-        if (onEnd) {
-            onEnd();
-        }
-        return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    // Small delay: on some Android Chrome versions, calling speak()
-    // immediately after cancel() silently fails to produce audio.
-    setTimeout(function () {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "en-IN";
-        utterance.rate = 1;
-        utterance.pitch = 1;
-
-        if (onEnd) {
-            utterance.onend = onEnd;
-            utterance.onerror = onEnd;
-        }
-
-        window.speechSynthesis.speak(utterance);
-    }, 100);
-}
-
-function unlockSpeechSynthesis() {
-    if (!window.speechSynthesis) {
-        return;
-    }
-    // Speaking a silent utterance directly inside a user tap "unlocks"
-    // TTS so later automatic (non-tap-triggered) speech is allowed.
-    const unlockUtterance = new SpeechSynthesisUtterance(" ");
-    unlockUtterance.volume = 0;
-    window.speechSynthesis.speak(unlockUtterance);
-}
-
-
-// ============================
-// LOCAL OBJECT-DETECTION MODEL
-// (runs fully in the browser via TensorFlow.js — no key, no server)
-// ============================
-
-let objectDetectionModel = null;
-let modelLoadingPromise = null;
-
-function loadDetectionModel() {
-    if (objectDetectionModel) {
-        return Promise.resolve(objectDetectionModel);
-    }
-    if (!modelLoadingPromise) {
-        modelLoadingPromise = cocoSsd.load().then(function (model) {
-            objectDetectionModel = model;
-            return model;
-        });
-    }
-    return modelLoadingPromise;
-}
-
-
-// ============================
-// FRIDAY'S BRAIN (fully self-made, runs in the browser — no API, no key)
-// ============================
-
-const userName = null; // could be set later if you add a "remember my name" feature
-
-function getRandomFrom(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function tryMath(message) {
-    // Matches things like "5 + 3", "what is 12 * 4", "10 divided by 2"
-    const cleaned = message
-        .toLowerCase()
-        .replace(/plus/g, "+")
-        .replace(/minus/g, "-")
-        .replace(/times|multiplied by/g, "*")
-        .replace(/divided by/g, "/")
-        .replace(/what is|what's|calculate|solve/g, "")
-        .trim();
-
-    const mathMatch = cleaned.match(/(-?\d+(\.\d+)?)\s*([\+\-\*\/])\s*(-?\d+(\.\d+)?)/);
-
-    if (!mathMatch) {
-        return null;
-    }
-
-    const a = parseFloat(mathMatch[1]);
-    const op = mathMatch[3];
-    const b = parseFloat(mathMatch[4]);
-    let result;
-
-    if (op === "+") result = a + b;
-    else if (op === "-") result = a - b;
-    else if (op === "*") result = a * b;
-    else if (op === "/") result = b !== 0 ? a / b : null;
-
-    if (result === null) {
-        return "You can't divide by zero!";
-    }
-
-    return a + " " + op + " " + b + " = " + result;
-}
-
-function getFridayReplySync(message) {
-    const text = message.toLowerCase().trim();
-
-    // --- Greetings ---
-    if (/^(hi|hii+|hello+|hey+|namaste|yo)\b/.test(text)) {
-        return getRandomFrom([
-            "Hello! How can I help you today?",
-            "Hi there! What can I do for you?",
-            "Hey! I'm listening."
-        ]);
-    }
-
-    // --- How are you ---
-    if (text.includes("how are you")) {
-        return "I'm running smoothly, thanks for asking! How are you doing?";
-    }
-
-    // --- Identity ---
-    if (text.includes("your name")) {
-        return "I'm FRIDAY, your personal AI assistant.";
-    }
-
-    if (text.includes("who made you") || text.includes("who created you") || text.includes("who built you")) {
-        return "I was built and coded by you — my own custom-made assistant!";
-    }
-
-    // --- Time / Date ---
-    if (text.includes("time") && !text.includes("sometime")) {
-        const now = new Date();
-        return "It's currently " + now.toLocaleTimeString();
-    }
-
-    if (text.includes("date") || text.includes("today")) {
-        const now = new Date();
-        return "Today's date is " + now.toLocaleDateString(undefined, {
-            weekday: "long", year: "numeric", month: "long", day: "numeric"
-        });
-    }
-
-    // --- Math ---
-    const mathResult = tryMath(text);
-    if (mathResult) {
-        return mathResult;
-    }
-
-    // --- Jokes ---
-    if (text.includes("joke")) {
-        return getRandomFrom([
-            "Why don't robots ever panic? Because they have great byte control!",
-            "Why did the computer go to the doctor? It caught a virus!",
-            "I would tell you a UDP joke, but you might not get it.",
-            "Why do programmers prefer dark mode? Because light attracts bugs!"
-        ]);
-    }
-
-    // --- Thanks ---
-    if (text.includes("thank")) {
-        return getRandomFrom(["You're welcome!", "Anytime!", "Happy to help!"]);
-    }
-
-    // --- Bye ---
-    if (/\b(bye|goodbye|see you|good night)\b/.test(text)) {
-        return getRandomFrom(["Goodbye! Talk to you soon.", "See you later!", "Take care!"]);
-    }
-
-    // --- Capabilities ---
-    if (text.includes("what can you do") || text.includes("help me")) {
-        return "I can chat with you, tell the time and date, do quick math, tell jokes, and even look through the camera to describe what it sees!";
-    }
-
-    // --- Fallback ---
-    return getRandomFrom([
-        "I heard you say: \"" + message + "\" — I'm still learning, so I might not fully understand that yet.",
-        "Interesting! Tell me more about that.",
-        "I'm not sure how to respond to that yet, but I'm listening."
-    ]);
-}
-
-// Kept async so the rest of the app (which awaits this function) doesn't
-// need to change — but it now resolves instantly with no network call.
-async function getFridayReply(message) {
-    return getFridayReplySync(message);
-}
-
-async function askFridayAboutImage(imageBase64, question) {
-    try {
-        if (typeof cocoSsd === "undefined") {
-            return "The object-detection model didn't load. Check your internet connection and reload the page.";
-        }
-
-        const model = await loadDetectionModel();
-
-        // Build an image element from the captured photo
-        const img = new Image();
-        await new Promise(function (resolve, reject) {
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = "data:image/jpeg;base64," + imageBase64;
-        });
-
-        const predictions = await model.detect(img);
-
-        if (predictions.length === 0) {
-            return "I couldn't clearly identify anything in that image. Try moving closer or improving the lighting.";
-        }
-
-        // Keep only reasonably confident predictions
-        const confident = predictions
-            .filter(function (p) { return p.score > 0.5; })
-            .sort(function (a, b) { return b.score - a.score; });
-
-        const itemsToReport = confident.length > 0 ? confident : predictions;
-        const names = itemsToReport.slice(0, 5).map(function (p) { return p.class; });
-
-        // Count duplicates (e.g. two "person" -> "2 persons")
-        const counts = {};
-        names.forEach(function (name) {
-            counts[name] = (counts[name] || 0) + 1;
-        });
-
-        const parts = Object.keys(counts).map(function (name) {
-            const count = counts[name];
-            return count > 1 ? (count + " " + name + "s") : ("a " + name);
-        });
-
-        let description;
-        if (parts.length === 1) {
-            description = "I can see " + parts[0] + ".";
-        } else {
-            description = "I can see " + parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] + ".";
-        }
-
-        // Object detection can't read text — flag that limitation if relevant
-        if (/read|text|written|says?\b/i.test(question)) {
-            description = "I can't read text yet, but here's what I can identify: " + description;
-        }
-
-        return description;
-
-    } catch (err) {
-        return "Sorry, I had trouble analyzing that image. (" + err.message + ")";
-    }
-}
-
-
-// ============================
-// CHAT INPUT
-// ============================
-
-async function sendMessage() {
-
-    const message = chatInput.value.trim();
-
-    if (message === "") {
-        return;
-    }
-
-    // User message
-    const userMessage = document.createElement("div");
-    userMessage.className = "user-message";
-    userMessage.textContent = message;
-    chatMessages.appendChild(userMessage);
-
-    // Clear input
+async function handleSend() {
+    const text = chatInput.value.trim();
+    if (!text) return;
     chatInput.value = "";
+    await sendText(text);
+}
+$("sendButton").onclick = handleSend;
+chatInput.addEventListener("keydown", (e) => { if (e.key === "Enter") handleSend(); });
 
-    // "Typing..." placeholder while we wait for the real AI reply
-    const typingMessage = document.createElement("div");
-    typingMessage.className = "friday-message";
-    typingMessage.textContent = "FRIDAY is typing...";
-    chatMessages.appendChild(typingMessage);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+/* ---------- PLUS MENU (Camera / Photo / File) ---------- */
+$("plusButton").onclick = (e) => { e.stopPropagation(); plusMenu.classList.toggle("open"); };
+document.addEventListener("click", (e) => {
+    if (!plusMenu.contains(e.target)) plusMenu.classList.remove("open");
+});
 
-    const replyText = await getFridayReply(message);
+$("optCamera").onclick = () => { plusMenu.classList.remove("open"); $("cameraInput").click(); };
+$("optPhoto").onclick = () => { plusMenu.classList.remove("open"); $("photoInput").click(); };
+$("optFile").onclick = () => { plusMenu.classList.remove("open"); $("fileInput").click(); };
 
-    typingMessage.textContent = replyText;
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+function handleImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    addMessage("", "user", URL.createObjectURL(file));
+    addMessage("Image mil gayi. (Isse AI se analyze karwane ka code getReply me lagao)", "ai");
+    e.target.value = "";
+}
+$("cameraInput").onchange = handleImage;
+$("photoInput").onchange = handleImage;
+$("fileInput").onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    addMessage("📎 " + file.name, "user");
+    addMessage("File mil gayi.", "ai");
+    e.target.value = "";
+};
 
-    speakText(replyText);
+/* ---------- VOICE MODE ---------- */
+const voiceMode = $("voiceMode");
+const orb = $("voiceOrb");
+const statusEl = $("voiceModeStatus");
+const muteBtn = $("voiceModeMute");
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let voiceOpen = false;
+let muted = false;
+let speaking = false;
+
+function setStatus(text, cls) {
+    statusEl.textContent = text;
+    orb.classList.remove("listening", "speaking");
+    if (cls) orb.classList.add(cls);
 }
 
-function handleEnter(event) {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        sendMessage();
-    }
+function startListening() {
+    if (!voiceOpen || muted || speaking || !recognition) return;
+    try { recognition.start(); } catch (e) { /* already started */ }
 }
 
-sendButton.addEventListener("click", sendMessage);
-chatInput.addEventListener("keypress", handleEnter);
-
-
-// ============================
-// BOTTOM MENU
-// ============================
-
-chatButton.addEventListener("click", function () {
-    closeMenu();
-    chatInput.focus();
-});
-
-pluginsButton.addEventListener("click", function () {
-    openModal("Plugins", "No plugins installed yet.");
-});
-
-historyButton.addEventListener("click", function () {
-    openModal("Chat History", "Your previous chats will appear here.");
-});
-
-settingsButton.addEventListener("click", function () {
-    openModal("Settings", "Settings panel coming soon.");
-});
-
-
-// ============================
-// SIDE MENU ITEMS
-// ============================
-
-profileMenu.addEventListener("click", function () {
-    closeMenu();
-    openModal("Profile", "Your profile details will appear here.");
-});
-
-newChatButton.addEventListener("click", function () {
-    chatMessages.innerHTML = "";
-    closeMenu();
-});
-
-historyMenu.addEventListener("click", function () {
-    closeMenu();
-    openModal("Chat History", "Your previous chats will appear here.");
-});
-
-pluginsMenu.addEventListener("click", function () {
-    closeMenu();
-    openModal("Plugins", "No plugins installed yet.");
-});
-
-settingsMenu.addEventListener("click", function () {
-    closeMenu();
-    openModal("Settings", "Settings panel coming soon.");
-});
-
-
-// ============================
-// VOICE MODE (FULL SCREEN)
-// ============================
-
-let voiceModeActive = false;
-let voiceMuted = false;
-let voiceRecognition = null;
-
-if (SpeechRecognitionAPI) {
-    voiceRecognition = new SpeechRecognitionAPI();
-    voiceRecognition.lang = "en-IN";
-    voiceRecognition.continuous = false;
-    voiceRecognition.interimResults = false;
-
-    voiceRecognition.onresult = function (event) {
-        const transcript = event.results[0][0].transcript;
-        handleVoiceModeMessage(transcript);
-    };
-
-    voiceRecognition.onerror = function (event) {
-        if (!voiceModeActive) {
-            return;
-        }
-
-        if (event.error === "no-speech") {
-            // Silence timeout — just listen again
-            if (!voiceMuted) {
-                startVoiceListening();
-            }
-            return;
-        }
-
-        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-            voiceModeStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
-        } else {
-            voiceModeStatus.textContent = "Mic error: " + event.error;
-        }
-
-        voiceOrb.classList.remove("listening");
-    };
-}
-
-function startVoiceListening() {
-    if (!voiceRecognition) {
-        voiceModeStatus.textContent = "Speech recognition not supported on this browser";
-        return;
-    }
-
-    voiceModeStatus.textContent = "Requesting mic permission...";
-
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(function (stream) {
-            stream.getTracks().forEach(function (track) {
-                track.stop();
-            });
-
-            try {
-                voiceOrb.classList.remove("speaking");
-                voiceOrb.classList.add("listening");
-                voiceModeStatus.textContent = "Listening...";
-                voiceRecognition.start();
-            } catch (err) {
-                // Recognition may already be running — ignore duplicate start errors
-            }
-        })
-        .catch(function (err) {
-            if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-                voiceModeStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
-            } else if (err.name === "NotFoundError") {
-                voiceModeStatus.textContent = "No microphone found on this device.";
-            } else {
-                voiceModeStatus.textContent = "Mic error: " + err.name;
-            }
-            voiceOrb.classList.remove("listening");
-        });
-}
-
-async function handleVoiceModeMessage(transcript) {
-
-    voiceOrb.classList.remove("listening");
-    voiceModeStatus.textContent = "Thinking...";
-
-    // Add to the main chat log too
-    const userMessage = document.createElement("div");
-    userMessage.className = "user-message";
-    userMessage.textContent = transcript;
-    chatMessages.appendChild(userMessage);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    const replyText = await getFridayReply(transcript);
-
-    const fridayMessage = document.createElement("div");
-    fridayMessage.className = "friday-message";
-    fridayMessage.textContent = replyText;
-    chatMessages.appendChild(fridayMessage);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    voiceOrb.classList.add("speaking");
-    voiceModeStatus.textContent = replyText;
-
-    speakText(replyText, function () {
-        voiceOrb.classList.remove("speaking");
-
-        if (voiceModeActive && !voiceMuted) {
-            startVoiceListening();
-        }
+function speak(text) {
+    return new Promise((resolve) => {
+        if (!("speechSynthesis" in window)) return resolve();
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.onend = u.onerror = () => resolve();
+        speechSynthesis.speak(u);
     });
+}
+
+function setupRecognition() {
+    if (!SR) return null;
+    const r = new SR();
+    r.lang = "hi-IN"; // English ke liye "en-US" kar do
+    r.interimResults = false;
+    r.continuous = false;
+
+    r.onstart = () => setStatus("Listening...", "listening");
+    r.onresult = async (e) => {
+        const text = e.results[0][0].transcript;
+        setStatus("Thinking...");
+        const reply = await sendText(text);
+        speaking = true;
+        setStatus("Speaking...", "speaking");
+        await speak(reply);
+        speaking = false;
+        setStatus("Listening...", "listening");
+    };
+    r.onerror = (e) => {
+        if (e.error === "not-allowed") setStatus("Mic permission allow karo");
+    };
+    r.onend = () => { setTimeout(startListening, 300); };
+    return r;
 }
 
 function openVoiceMode() {
-    voiceModeActive = true;
-    voiceMuted = false;
-    voiceModeMute.classList.remove("muted");
-    voiceMode.classList.add("active");
-    voiceOrb.classList.remove("listening", "speaking");
-    voiceModeStatus.textContent = "Starting...";
-
-    unlockSpeechSynthesis();
-    startVoiceListening();
+    if (!SR) {
+        showModal("Voice Mode", "Is browser me voice recognition support nahi hai. Chrome use karo.");
+        return;
+    }
+    voiceOpen = true;
+    muted = false;
+    muteBtn.classList.remove("muted");
+    voiceMode.classList.add("open");
+    recognition = recognition || setupRecognition();
+    setStatus("Listening...", "listening");
+    startListening();
 }
 
 function closeVoiceMode() {
-    voiceModeActive = false;
-
-    if (voiceRecognition) {
-        voiceRecognition.stop();
-    }
-
-    if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-    }
-
-    voiceOrb.classList.remove("listening", "speaking");
-    voiceMode.classList.remove("active");
+    voiceOpen = false;
+    voiceMode.classList.remove("open");
+    speechSynthesis.cancel();
+    speaking = false;
+    if (recognition) { try { recognition.abort(); } catch (e) {} }
 }
 
-voiceModeButton.addEventListener("click", openVoiceMode);
-voiceModeClose.addEventListener("click", closeVoiceMode);
-voiceModeMinimize.addEventListener("click", closeVoiceMode);
-
-voiceModeMute.addEventListener("click", function () {
-    voiceMuted = !voiceMuted;
-    voiceModeMute.classList.toggle("muted", voiceMuted);
-
-    if (voiceMuted) {
-        if (voiceRecognition) {
-            voiceRecognition.stop();
-        }
-        voiceOrb.classList.remove("listening");
-        voiceModeStatus.textContent = "Microphone muted";
+$("voiceModeButton").onclick = openVoiceMode;
+$("voiceModeClose").onclick = closeVoiceMode;
+$("voiceModeMinimize").onclick = closeVoiceMode;
+muteBtn.onclick = () => {
+    muted = !muted;
+    muteBtn.classList.toggle("muted", muted);
+    if (muted) {
+        if (recognition) { try { recognition.abort(); } catch (e) {} }
+        setStatus("Muted");
     } else {
-        startVoiceListening();
+        setStatus("Listening...", "listening");
+        startListening();
     }
-});
-
-
-// ============================
-// LIVE CAMERA
-// ============================
-
-let cameraStream = null;
-let currentFacingMode = "environment"; // used only for the very first camera open
-let videoDevices = [];
-let currentDeviceIndex = 0;
-
-async function refreshVideoDevices() {
-    try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        videoDevices = devices.filter(function (d) {
-            return d.kind === "videoinput";
-        });
-    } catch (err) {
-        videoDevices = [];
-    }
-}
-
-async function openCamera() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Camera not supported on this browser");
-        return;
-    }
-
-    unlockSpeechSynthesis();
-    cameraMode.classList.add("active");
-
-    // Start loading the detection model in the background (don't block camera opening)
-    loadDetectionModel().catch(function () {
-        // Errors are handled when capture is actually attempted
-    });
-
-    await startCameraStream();
-}
-
-async function startCameraStream(deviceId) {
-    cameraStatus.textContent = "Requesting camera permission...";
-
-    // Stop any existing stream before starting a new one
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(function (track) {
-            track.stop();
-        });
-        cameraStream = null;
-    }
-
-    const constraints = deviceId
-        ? { video: { deviceId: { exact: deviceId } }, audio: false }
-        : { video: { facingMode: currentFacingMode }, audio: false };
-
-    try {
-        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-        cameraVideo.srcObject = cameraStream;
-        cameraStatus.textContent = "Point the camera and ask FRIDAY";
-
-        // Build/refresh the list of actual physical cameras now that
-        // we have permission (labels are only available after that)
-        await refreshVideoDevices();
-
-        // Sync currentDeviceIndex to whichever camera is actually active
-        const activeTrack = cameraStream.getVideoTracks()[0];
-        const activeSettings = activeTrack ? activeTrack.getSettings() : {};
-        if (activeSettings.deviceId) {
-            const idx = videoDevices.findIndex(function (d) {
-                return d.deviceId === activeSettings.deviceId;
-            });
-            if (idx !== -1) {
-                currentDeviceIndex = idx;
-            }
-        }
-
-    } catch (err) {
-        // Fall back to any available camera
-        try {
-            cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-            cameraVideo.srcObject = cameraStream;
-            cameraStatus.textContent = "Point the camera and ask FRIDAY";
-            await refreshVideoDevices();
-        } catch (err2) {
-            cameraStatus.textContent = "Camera permission denied or unavailable.";
-        }
-    }
-}
-
-function flipCamera() {
-    if (videoDevices.length < 2) {
-        cameraStatus.textContent = "Only one camera found on this device.";
-        return;
-    }
-
-    currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
-    startCameraStream(videoDevices[currentDeviceIndex].deviceId);
-}
-
-function closeCamera() {
-    cameraMode.classList.remove("active");
-
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(function (track) {
-            track.stop();
-        });
-        cameraStream = null;
-    }
-
-    cameraVideo.srcObject = null;
-    cameraQuestionInput.value = "";
-}
-
-async function captureAndAsk() {
-    if (!cameraStream) {
-        return;
-    }
-
-    cameraCaptureButton.disabled = true;
-    cameraStatus.textContent = "Analyzing image...";
-
-    // Draw the current video frame onto the hidden canvas
-    cameraCanvas.width = cameraVideo.videoWidth;
-    cameraCanvas.height = cameraVideo.videoHeight;
-    const ctx = cameraCanvas.getContext("2d");
-    ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
-
-    // Convert to base64 JPEG (strip the data-URL prefix, backend adds it back)
-    const dataUrl = cameraCanvas.toDataURL("image/jpeg", 0.8);
-    const imageBase64 = dataUrl.split(",")[1];
-
-    const question = cameraQuestionInput.value.trim() || "What do you see in this image?";
-
-    const replyText = await askFridayAboutImage(imageBase64, question);
-
-    cameraStatus.textContent = replyText;
-    cameraCaptureButton.disabled = false;
-    cameraQuestionInput.value = "";
-
-    // Log it in the main chat too
-    const userMessage = document.createElement("div");
-    userMessage.className = "user-message";
-    userMessage.textContent = "📷 " + question;
-    chatMessages.appendChild(userMessage);
-
-    const fridayMessage = document.createElement("div");
-    fridayMessage.className = "friday-message";
-    fridayMessage.textContent = replyText;
-    chatMessages.appendChild(fridayMessage);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    speakText(replyText);
-}
-
-cameraButton.addEventListener("click", openCamera);
-cameraCloseButton.addEventListener("click", closeCamera);
-cameraFlipButton.addEventListener("click", flipCamera);
-cameraCaptureButton.addEventListener("click", captureAndAsk);
+};
