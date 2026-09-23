@@ -176,6 +176,7 @@ function closeVoiceMode() {
 
 $("voiceModeButton").onclick = openVoiceMode;
 $("voiceModeClose").onclick = closeVoiceMode;
+
 $("voiceModeMinimize").onclick = closeVoiceMode;
 muteBtn.onclick = () => {
     muted = !muted;
