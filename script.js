@@ -4,9 +4,6 @@
 
 const menuButton = document.getElementById("menuButton");
 const profileButton = document.getElementById("profileButton");
-const micButton = document.getElementById("micButton");
-const micStatus = document.getElementById("micStatus");
-
 const chatInput = document.getElementById("chatInput");
 const sendButton = document.getElementById("sendButton");
 const chatMessages = document.getElementById("chatMessages");
@@ -49,94 +46,11 @@ const cameraFlipButton = document.getElementById("cameraFlipButton");
 const cameraCaptureButton = document.getElementById("cameraCaptureButton");
 const cameraQuestionInput = document.getElementById("cameraQuestionInput");
 
-let isListening = false;
-let recognition = null;
-
-const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-if (SpeechRecognitionAPI) {
-    recognition = new SpeechRecognitionAPI();
-    recognition.lang = "en-IN";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onresult = function (event) {
-        const transcript = event.results[0][0].transcript;
-        chatInput.value = transcript;
-        sendMessage();
-    };
-
-    recognition.onerror = function (event) {
-        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-            micStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
-        } else if (event.error === "no-speech") {
-            micStatus.textContent = "No speech detected. Try again.";
-        } else {
-            micStatus.textContent = "Mic error: " + event.error;
-        }
-        stopListening();
-    };
-
-    recognition.onend = function () {
-        stopListening();
-    };
-}
-
-function startListening() {
-    if (!recognition) {
-        micStatus.textContent = "Speech recognition not supported on this browser";
-        return;
-    }
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        micStatus.textContent = "Mic access not supported on this browser";
-        return;
-    }
-
-    micStatus.textContent = "Requesting mic permission...";
-
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(function (stream) {
-            // Stop the stream immediately, we only needed it to trigger/check permission
-            stream.getTracks().forEach(function (track) {
-                track.stop();
-            });
-
-            try {
-                isListening = true;
-                micButton.classList.add("active");
-                micStatus.textContent = "Listening...";
-                recognition.start();
-            } catch (err) {
-                micStatus.textContent = "Could not start mic: " + err.message;
-                stopListening();
-            }
-        })
-        .catch(function (err) {
-            if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-                micStatus.textContent = "Mic permission denied. Enable it in browser site settings.";
-            } else if (err.name === "NotFoundError") {
-                micStatus.textContent = "No microphone found on this device.";
-            } else {
-                micStatus.textContent = "Mic error: " + err.name;
-            }
-            stopListening();
-        });
-}
-
-function stopListening() {
-    isListening = false;
-    micButton.classList.remove("active");
-    micStatus.textContent = "Tap microphone to talk";
-    if (recognition) {
-        recognition.stop();
-    }
-}
-
-
 // ============================
 // SIDE MENU
 // ============================
+
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 function openMenu() {
     sideMenu.classList.add("active");
@@ -181,21 +95,6 @@ modalClose.addEventListener("click", closeModal);
 
 profileButton.addEventListener("click", function () {
     openModal("Profile", "Your profile details will appear here.");
-});
-
-
-// ============================
-// MICROPHONE
-// ============================
-
-micButton.addEventListener("click", function () {
-    unlockSpeechSynthesis();
-
-    if (isListening) {
-        stopListening();
-    } else {
-        startListening();
-    }
 });
 
 
@@ -745,121 +644,4 @@ async function openCamera() {
     await startCameraStream();
 }
 
-async function startCameraStream(deviceId) {
-    cameraStatus.textContent = "Requesting camera permission...";
-
-    // Stop any existing stream before starting a new one
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(function (track) {
-            track.stop();
-        });
-        cameraStream = null;
-    }
-
-    const constraints = deviceId
-        ? { video: { deviceId: { exact: deviceId } }, audio: false }
-        : { video: { facingMode: currentFacingMode }, audio: false };
-
-    try {
-        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-        cameraVideo.srcObject = cameraStream;
-        cameraStatus.textContent = "Point the camera and ask FRIDAY";
-
-        // Build/refresh the list of actual physical cameras now that
-        // we have permission (labels are only available after that)
-        await refreshVideoDevices();
-
-        // Sync currentDeviceIndex to whichever camera is actually active
-        const activeTrack = cameraStream.getVideoTracks()[0];
-        const activeSettings = activeTrack ? activeTrack.getSettings() : {};
-        if (activeSettings.deviceId) {
-            const idx = videoDevices.findIndex(function (d) {
-                return d.deviceId === activeSettings.deviceId;
-            });
-            if (idx !== -1) {
-                currentDeviceIndex = idx;
-            }
-        }
-
-    } catch (err) {
-        // Fall back to any available camera
-        try {
-            cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-            cameraVideo.srcObject = cameraStream;
-            cameraStatus.textContent = "Point the camera and ask FRIDAY";
-            await refreshVideoDevices();
-        } catch (err2) {
-            cameraStatus.textContent = "Camera permission denied or unavailable.";
-        }
-    }
-}
-
-function flipCamera() {
-    if (videoDevices.length < 2) {
-        cameraStatus.textContent = "Only one camera found on this device.";
-        return;
-    }
-
-    currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
-    startCameraStream(videoDevices[currentDeviceIndex].deviceId);
-}
-
-function closeCamera() {
-    cameraMode.classList.remove("active");
-
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(function (track) {
-            track.stop();
-        });
-        cameraStream = null;
-    }
-
-    cameraVideo.srcObject = null;
-    cameraQuestionInput.value = "";
-}
-
-async function captureAndAsk() {
-    if (!cameraStream) {
-        return;
-    }
-
-    cameraCaptureButton.disabled = true;
-    cameraStatus.textContent = "Analyzing image...";
-
-    // Draw the current video frame onto the hidden canvas
-    cameraCanvas.width = cameraVideo.videoWidth;
-    cameraCanvas.height = cameraVideo.videoHeight;
-    const ctx = cameraCanvas.getContext("2d");
-    ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
-
-    // Convert to base64 JPEG (strip the data-URL prefix, backend adds it back)
-    const dataUrl = cameraCanvas.toDataURL("image/jpeg", 0.8);
-    const imageBase64 = dataUrl.split(",")[1];
-
-    const question = cameraQuestionInput.value.trim() || "What do you see in this image?";
-
-    const replyText = await askFridayAboutImage(imageBase64, question);
-
-    cameraStatus.textContent = replyText;
-    cameraCaptureButton.disabled = false;
-    cameraQuestionInput.value = "";
-
-    // Log it in the main chat too
-    const userMessage = document.createElement("div");
-    userMessage.className = "user-message";
-    userMessage.textContent = "📷 " + question;
-    chatMessages.appendChild(userMessage);
-
-    const fridayMessage = document.createElement("div");
-    fridayMessage.className = "friday-message";
-    fridayMessage.textContent = replyText;
-    chatMessages.appendChild(fridayMessage);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    speakText(replyText);
-}
-
-cameraButton.addEventListener("click", openCamera);
-cameraCloseButton.addEventListener("click", closeCamera);
-cameraFlipButton.addEventListener("click", flipCamera);
-cameraCaptureButton.addEventListener("click", captureAndAsk);
+async function startC
