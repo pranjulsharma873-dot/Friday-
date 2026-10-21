@@ -22,6 +22,7 @@
             <button type="button" class="plus-item" id="optCamera">📷 Camera</button>
             <button type="button" class="plus-item" id="optPhoto">🖼️ Photo</button>
             <button type="button" class="plus-item" id="optFile">📎 File</button>
+            <button type="button" class="plus-item" id="optVideoMode">🎥 Video Mode (Live)</button>
         </div>
 
         <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
@@ -66,6 +67,20 @@
         <div class="voice-mode-bottom">
             <button class="voice-icon-btn" id="voiceModeMute" type="button">🎙️</button>
             <button class="voice-icon-btn" id="voiceModeClose" type="button">✕</button>
+        </div>
+    </div>
+
+    <!-- VIDEO MODE (camera + live AI) -->
+    <div class="video-mode" id="videoMode">
+        <video id="videoPreview" class="video-preview" autoplay playsinline muted></video>
+        <div class="video-mode-top">
+            <button class="voice-icon-btn" id="videoModeFlip" type="button" aria-label="Flip camera">🔄</button>
+            <button class="voice-icon-btn" id="videoModeMinimize" type="button" aria-label="Close">⌄</button>
+        </div>
+        <div class="video-mode-status" id="videoModeStatus">Camera khul rahi hai...</div>
+        <div class="voice-mode-bottom">
+            <button class="voice-icon-btn" id="videoModeMute" type="button">🎙️</button>
+            <button class="voice-icon-btn" id="videoModeClose" type="button">✕</button>
         </div>
     </div>
 
